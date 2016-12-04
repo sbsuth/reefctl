@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Error</title>
+  </head> 
+  <body>
+  <div class="navbar navbar-fixed-top">
+  </div>
+	  <h1>{message}</h1>
+	  <h2>{error.status}</h2>
+	  <pre>{error.stack}</pre>
+  <footer>
+    <div class="container">
+      <p>&copy; Copyright 2016. </p>
+    </div>
+  </footer>
+  </body>
+</html>
