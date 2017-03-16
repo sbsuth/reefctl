@@ -52,7 +52,8 @@ function setup_session( session )
 
 var instr_mod_names = [
 	"fixture",
-	"probes"
+	"probes",
+	"power"
 ];
 
 var instr_mods = [];
@@ -145,15 +146,15 @@ function init_session( session, req )
 		  type: 'fixture',
 		  address: "10.10.2.4:1000"
 		},
-		{ name: 'probes1',
-		  type: 'probes',
+		{ name: 'main_power',
+		  type: 'power',
 		  address: "10.10.2.5:1000"
 		},
-		{ name: 'probes2',
+		{ name: 'probes1',
 		  type: 'probes',
 		  address: "10.10.2.6:1000"
 		},
-		{ name: 'probes3',
+		{ name: 'probes2',
 		  type: 'probes',
 		  address: "10.10.2.7:1000"
 		}

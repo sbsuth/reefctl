@@ -27,8 +27,8 @@ var utils = require("./utils");
 utils.init_dust_helpers( dust );
 utils.load_instr_mods();
 
-var urls = [];
-urls['fixture'] = '10.10.2.4:1000';
+//var urls = [];
+//urls['fixture'] = '10.10.2.4:1000';
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -44,6 +44,7 @@ app.use('/css', express.static(__dirname + '/public/stylesheets'));
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap/dist/js')); // redirect bootstrap JS
 app.use('/js', express.static(__dirname + '/node_modules/jquery/dist')); // redirect JS jQuery
 app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css')); // redirect CSS bootstrap
+app.use('/js', express.static(__dirname + '/node_modules/bootstrap-checkbox/dist/js')); // redirect bootstrap JS
 
 
 // Filter to add app-level objects to the request.
@@ -51,7 +52,7 @@ app.use(function(req,res,next){
     req.db = db;
 	req.dust = dust;
 	req.utils = utils;
-	req.urls = urls;
+	//req.urls = urls;
 
 	var session = {};
 	req.session = session;

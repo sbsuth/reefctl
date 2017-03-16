@@ -10,6 +10,7 @@ $(document).ready(function() {
     $('#btnUp').on('click', function (event) {fixtureCmd(event,"up",instr_name)});
     $('#btnDown').on('click', function (event) {fixtureCmd(event,"down",instr_name)});
     $('#btnStop').on('click', function (event) {stopHeightProgress(); fixtureCmd(event,"stop",instr_name)});
+    $('#setCurHeight').on('click', function (event) {setCurHeight();});
 });
 
 // Functions =============================================================
@@ -62,8 +63,10 @@ function updateHeightProgress( instr_name )
 					console.log("FIXTURE: Got height data: "+data.height+","+data.moving);
 				}
 				var prog_bar = $('#height_progress');
+				var h_entry = $('#curHeightEntry');
 				prog_bar.css('width', data.height+'%')
 				prog_bar.attr('aria-valuenow', data.height+"%");
+				h_entry.val(data.height);
 				if (!data.moving) {
 					stopHeightProgress();
 				}
@@ -79,6 +82,17 @@ function updateHeightProgress( instr_name )
 		});
 	}
   }, 200);
+}
+
+// Sends the contents of the curHeightEntry to the fixture.
+function setCurHeight()
+{
+	var h = $('#curHeightEntry').val();
+	if ((h < 0) || (h > 100)) {
+		showError( "Enter a height as a percentage between 0 and 100", 1 );
+		return;
+	}
+	console.log("Send height "+h);
 }
 
 // Fixture stop.
