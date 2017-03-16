@@ -1,0 +1,58 @@
+{>"master" /}
+{<title}: Lighting Fixture{/title}
+{<bodyContent}
+<input type=hidden id=instr_name value={instr_name} />
+<div class="container">
+	<!-- Lighting container -->
+	<h2>Lights</h2>
+</div><!--container-->
+<div class="container">
+	<!-- Height container -->
+	<h2>Fixture height</h2>
+	<div class="row">
+		<!-- Main row for height -->
+		<div class="col-xs-12 col-md-6">
+			<div class="row">
+				<div class="col-xs-12">
+					<!-- Column for height prog bar -->
+					<div class="progress">
+						<div class="progress-bar" id=height_progress role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 60%;">
+								<span class="sr-only">60% Complete</span>
+						</div>
+					</div>
+				</div>
+				<div class="col-xs-8">
+					<div class="input-group input-group-sm">
+						<input type="text" class="form-control" placeholder="Cur height %" id=curHeightEntry>
+						<span class="input-group-btn">
+							<button class="btn btn-default" type="button" id="setCurHeight">Set</button>
+						</span>
+					</div><!-- /input-group -->
+				</div>
+			</div>
+		</div><!--col-->
+		<div class="col-xs-12 col-md-6">
+			<!-- Column for height control -->
+			<div class="btn-group">
+				<button type="button" class="btn btn-success" id="btnUp" width=40>Up</button>
+				<button type="button" class="btn btn-primary" id="btnDown" width=40>Down</button>
+				<button type="button" class="btn btn-danger" id="btnStop" width=40>Stop</button>
+			</div>
+		</div><!--col-->
+		<div class="col-xs-12 col-md-6 col-md-offset-0">
+		<h2>another one</h2>
+		</div><!--col-->
+		<div class="col-xs-12 col-md-6 pull-left">
+		<h2>another two</h2>
+		</div><!--col-->
+	</div><!--row-->
+</div><!--container-->
+<div class="container" >
+	<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
+	 <table><tr>
+	   <td><p/></td>
+	   <td><button type="button" aria-hidden="true" onclick="clearError()">&times;</button></td>
+	</tr></table>
+	</div>
+</div><!--container-->
+{/bodyContent}
