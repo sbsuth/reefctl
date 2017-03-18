@@ -1,0 +1,19 @@
+.rc_switch_panel_table {
+		table-layout: fixed;
+		margin: 10px;
+}
+
+.rc_switch_panel_table td {
+		padding: 10px;
+}
+
+.rc_switch_panel_table td {
+		width 100px;
+}
+
+
+
+.rc_one_switch_table td {
+		padding: 10px;
+}
+
