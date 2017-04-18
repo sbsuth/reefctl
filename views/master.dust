@@ -12,6 +12,8 @@
 	<!-- App CSS -->
 	<link href="/stylesheets/starter-template.css" rel="stylesheet">
     <link href="/stylesheets/offcanvas.css" rel="stylesheet">
+	
+	  {+local_style /}
 
   </head> 
   <body>

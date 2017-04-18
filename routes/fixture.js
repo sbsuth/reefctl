@@ -5,7 +5,7 @@ var request = require('request');
 var debug_fixture = 1;
 
 /*
- * POST to fixture.
+ * POST a command to the fixture.
  */
 router.post('/fixture_cmd/:cmd/:instr_name', function(req, res) {
 
@@ -51,6 +51,9 @@ router.post('/fixture_cmd/:cmd/:instr_name', function(req, res) {
 	});
 });
 
+//
+// GET fixture_height query.
+//
 router.get('/fixture_height/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
@@ -104,7 +107,7 @@ router.get('/fixture_main/:instr_name', function(req, res) {
 		return;
 	}
 	var d = utils.get_master_template_data(req);
-	d.load_javascript.push( "/js/fixture.js" );
+	d.load_javascript.push( "/js/fixture.c.js" );
 	d.instr_name = instr_name;
 	res.locals.session = req.session;
 	res.render("fixture_main", d );

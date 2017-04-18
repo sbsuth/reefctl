@@ -5,3 +5,14 @@ body {
   padding: 40px 15px;
   text-align: center;
 }
+
+.rc_label {
+	font-family: "Arial Black";
+	font-size: medium;
+	font-weight: bold;
+}
+.rc_detail {
+	font-family: "Arial";
+	font-size: medium;
+	font-weight: normal;
+}

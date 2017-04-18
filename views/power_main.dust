@@ -1,20 +1,114 @@
 {>"master" /}
 {<title}: Power Panel{/title}
+{<local_style}
+    <link href="/stylesheets/power.css" rel="stylesheet">
+{/local_style}
 {<bodyContent}
 <input type=hidden id=instr_name value={instr_name} />
 <div class="container">
 	<!-- Power container -->
-	<h2>Power Panel</h2>
+<h3>Power Panel</h3>
 </div><!--container-->
 <div class="container">
 	<!-- Switch status container -->
-	<h2>Switch status</h2>
 	<div class="row">
 		<!-- Main row for height -->
 		<div class="col-xs-12 col-md-6">
 			<div class="row">
-					<p><input type="checkbox" data-off-title="off" data-on-title="on" id=P0>P0</p>
-					<p><input type="checkbox" data-off-title="off" data-on-title="on" id=P1>P1</p>
+				  <table class="table table-bordered rc_switch_panel_table">
+					<!-- row for pair of sockets -->
+					<tr>
+						<td>
+							<!-- P0 -->
+							<table class="rc_one_switch_table">
+								  <tr id=P0>
+								    <td><p class="rc_label">P0</p></td>
+									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
+									<td><p class="rc_detail">(unassigned)</p></td>
+								  </tr>
+							</table>
+						</td>
+						<td>
+							<!-- P1 -->
+							<table class="rc_one_switch_table">
+								  <tr id=P1>
+								    <td><p class="rc_label">P1</p></td>
+									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
+									<td><p class="rc_detail">(unassigned)</p></td>
+								  </tr>
+							</table>
+						</td>
+					</tr>
+					<!-- row for pair of sockets -->
+					<tr>
+						<td>
+							<!-- P2 -->
+							<table class="rc_one_switch_table">
+								  <tr id=P2>
+								    <td><p class="rc_label">P2</p></td>
+									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
+									<td><p class="rc_detail">(unassigned)</p></td>
+								  </tr>
+							</table>
+						</td>
+						<td>
+							<!-- P3 -->
+							<table class="rc_one_switch_table">
+								  <tr id=P3>
+								    <td><p class="rc_label">P3</p></td>
+									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
+									<td><p class="rc_detail">(unassigned)</p></td>
+								  </tr>
+							</table>
+						</td>
+					</tr>
+					<!-- row for pair of sockets -->
+					<tr>
+						<td>
+							<!-- P4 -->
+							<table class="rc_one_switch_table">
+								  <tr id=P4>
+								    <td><p class="rc_label">P4</p></td>
+									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
+									<td><p class="rc_detail">(unassigned)</p></td>
+								  </tr>
+							</table>
+						</td>
+						<td>
+							<!-- P5 -->
+							<table class="rc_one_switch_table">
+								  <tr id=P5>
+								    <td><p class="rc_label">P5</p></td>
+									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
+									<td><p class="rc_detail">(unassigned)</p></td>
+								  </tr>
+							</table>
+						</td>
+					</tr>
+					<!-- row for pair of sockets -->
+					<tr>
+						<td>
+							<!-- P6 -->
+							<table class="rc_one_switch_table">
+								  <tr id=P6>
+								    <td><p class="rc_label">P6</p></td>
+									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
+									<td><p class="rc_detail">(unassigned)</p></td>
+								  </tr>
+							</table>
+						</td>
+						<td>
+							<!-- P7 -->
+							<table class="rc_one_switch_table">
+								  <tr id=P7>
+								    <td><p class="rc_label">P7</p></td>
+									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
+									<td><p class="rc_detail">(unassigned)</p></td>
+								  </tr>
+							</table>
+						</td>
+					</tr>
+					</table>
 			</div>
 		</div><!--col-->
 	</div><!--row-->
