@@ -2,7 +2,7 @@
 // Namespace
 var power  = {
 
-	debug: 1,
+	debug: 2,
 	debug_prefix : "POWER",
 	progresspump : undefined,
 	waiting_status : 0,
