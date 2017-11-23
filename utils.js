@@ -174,7 +174,7 @@ var debug_queue = 0;
 
 function queue_instr_cmd( instr, func, res )
 {
-	var url = instr.session.address;
+	var url = instr.address;
 	var queue = instr_cmd_queue[url];
 	if (queue === undefined) {
 		queue = [];
@@ -188,7 +188,7 @@ function queue_instr_cmd( instr, func, res )
 			console.log("QUEUE: Returning 429 because busy");
 		}
 		res.send({
-		  message: "Instrument " + instr.session.name + " is busy.",
+		  message: "Instrument " + instr.name + " is busy.",
 		  error: 429
 		});
 		return;
@@ -197,14 +197,14 @@ function queue_instr_cmd( instr, func, res )
 	queue.push( func );
 	if (queue.length == 1) {
 		if (debug_queue) {
-			console.log("QUEUE: Executing command immediately for " + instr.session.name);
+			console.log("QUEUE: Executing command immediately for " + instr.name);
 		}
 		func();
 	} else {
 		// Return, expecting that the next function on the queue
 		// to return will call inst_cmd_done().
 		if (debug_queue) {
-			console.log("QUEUE: Queing command for " + instr.session.name);
+			console.log("QUEUE: Queing command for " + instr.name);
 		}
 	}
 }
@@ -213,15 +213,15 @@ function queue_instr_cmd( instr, func, res )
 // Remove it from the head of the queue, and call any next command.
 function instr_cmd_done( instr )
 {
-	var url = instr.session.address;
+	var url = instr.address;
 	var queue = instr_cmd_queue[url];
 	queue.shift();
 	if (debug_queue) {
-		console.log("QUEUE: command done.  "+queue.length+" commands left for "+instr.session.name);
+		console.log("QUEUE: command done.  "+queue.length+" commands left for "+instr.name);
 	}
 	if (queue.length > 0) {
 		if (debug_queue) {
-			console.log("QUEUE: Executing cmd off queue for "+instr.session.name);
+			console.log("QUEUE: Executing cmd off queue for "+instr.name);
 		}
 		queue[0]();
 	}

@@ -17,7 +17,7 @@ router.post('/fixture_cmd/:cmd/:instr_name', function(req, res) {
 		utils.send_error( res, "fixture instrument \'"+instr_name+"\' unknown.");
 		return;
 	}
-	var url = instr.session.address;
+	var url = instr.address;
 	switch (cmd) {
 		case 'up':
 		case 'down':
@@ -62,7 +62,7 @@ router.get('/fixture_height/:instr_name', function(req, res) {
 		utils.send_error( res, "ERROR: fixture instrument \'"+instr_name+"\' unknown.");
 		return;
 	}
-	var url = instr.session.address;
+	var url = instr.address;
 	var cmd = "gh";
 
 	if (debug_fixture) {

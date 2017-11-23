@@ -21,7 +21,7 @@ router.post('/power_cmd/:cmd/:instr_name/:unit', function(req, res) {
 	if (unit >= 0) {
 		cmd += " " +unit;
 	}
-	var url = instr.session.address;
+	var url = instr.address;
 	if (debug_power) {
 		console.log("POWER: Incoming command: "+cmd);
 	}
@@ -60,12 +60,12 @@ router.get('/power_status/:instr_name', function(req, res) {
 		utils.send_error( res, "ERROR: power panel \'"+instr_name+"\' unknown.");
 		return;
 	}
-	var url = instr.session.address;
-	var cmd = "stat";
-
 	if (debug_power) {
 		console.log("POWER: Incoming power panel status request");
 	}
+	var url = instr.address;
+	var cmd = "stat";
+
 	utils.queue_instr_cmd( instr, function () {
 		if (debug_power) {
 			console.log("POWER: Sending "+cmd+" command from server");
