@@ -8,35 +8,34 @@ var request = require('request');
 router.get('/dashboard', function(req, res) {
 	var utils = req.utils;
 	var widgets = [];
-	req.instruments.forEach( function(instr) {
-		widgets.push( {
-			name: instr.session.name,
-			widget_body: instr.module.widget_page
-		});
+	req.session.instruments.forEach( function(instr) {
+		var mod = utils.get_instr_mod(instr.type);
+		var widget_data = {
+			instr : instr,
+			status_key: instr.address + ";" + mod.status_cmd + ";" + mod.status_route,
+			widget_body: mod.widget_page,
+			details_page: mod.main_page + "/" + instr.name
+		};
+		mod.init_widget_data( req.session, instr, widget_data );
+		widgets.push( widget_data );
 	});
 	var d = utils.get_master_template_data(req);
+	d.load_javascript.push( "/js/dashboard.c.js" );
 	d.title = 'dashboard';
 	d.widgets = widgets;
 	res.locals.session = req.session;
 	res.render('dashboard', d );
 });
 
-/*
- * GET instr_details.
- * Use the instrument name to load up its description, then render its main page.
- */
-router.get('/instr_details/:instr_name', function(req, res) {
-	var utils = req.utils;
-	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req,instr_name);
-	if (instr === undefined) {
-		utils.send_error( res, "Instrument \'"+instr_name+"\' unknown.");
-		return;
+function init_session( session )
+{
+}
+
+module.exports = {
+	router: router,
+	descr:  {
+		name: "dahboard",
+		label: "Dashboard",
+		init_session: init_session,
 	}
-	var d = utils.get_master_template_data(req);
-	res.locals.session = req.session;
-	res.redirect("/"+instr.module.main_page+"/"+instr_name );
-});
-
-
-module.exports = router;
+};

@@ -11,14 +11,14 @@
 	  <div class="row">
 		{#widgets}
 			<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-			  <h2>{name}</h2>
+			  <h2 id={status_key}>{instr.name}</h2>
 			  {@partial_indirect target="widget_body"/}
-			  <p><a class="btn btn-default" href="#" role="button">View details &raquo;</a></p>
-			</div><!--/.col-xs-6.col-lg-4-->
+			  <p><a class="btn btn-default" href={details_page} role="button">View details &raquo;</a></p>
+			</div>
 		{/widgets}
-	  </div><!--/row-->
-	</div><!--/.col-xs-12.col-sm-9-->
-  </div><!--/row-->
+	  </div>
+	</div>
+  </div>
 
 </div><!-- /.container -->
 {/bodyContent}

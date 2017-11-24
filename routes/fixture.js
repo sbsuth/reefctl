@@ -117,6 +117,12 @@ function init_session( session )
 {
 }
 
+// Add fields to 'widget' for the given instr to support the widget just template.
+function init_widget_data( session, instr, widget )
+{
+}
+
+
 module.exports = {
 	router: router,
 	descr:  {
@@ -124,6 +130,9 @@ module.exports = {
 		label: "Lighting fixture",
 		main_page: "fixture_main",
 		widget_page: "fixture_widget",
+		status_cmd: "gh",
+		status_route: "fixture_height",
 		init_session: init_session,
+		init_widget_data: init_widget_data
 	}
 };

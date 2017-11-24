@@ -57,6 +57,7 @@ var instr_mod_names = [
 ];
 
 var instr_mods = [];
+var dashboard = undefined;
 
 function load_instr_mods()
 {
@@ -90,9 +91,9 @@ function get_instr_mod( kind )
 function get_instr_by_name( req, instr_name )
 {
 	var i;
-	for ( i=0; i < req.instruments.length; i++ ) {
-		var instr = req.instruments[i];
-		if (instr.session.name === instr_name) {
+	for ( i=0; i < req.session.instruments.length; i++ ) {
+		var instr = req.session.instruments[i];
+		if (instr.name === instr_name) {
 			return instr;
 		}
 	}
@@ -107,59 +108,44 @@ function save_instr_info()
 {
 }
 
-// Initializes and adds an object to the instruments member of the req
-// for each instrument with info in the session.
-// Members initialized:
-//  'session':  a reference to the for the same instrument.
-//  'module':  a reference to the module class for the instrument.
-//  'status':  empty
-//  'settings':  empty
-function init_instruments( session, req )
-{
-	session.instruments.forEach( function(instr_session) {
-		if ( req.instruments === undefined ){
-			req.instruments = [];
-		}
-		var instr = {
-			session: instr_session,
-			module: get_instr_mod( instr_session.type ),
-			status: {},
-			settings: {}
-		}
-		instr.module.init_session(instr);
-		req.instruments.push(instr);
-	});
-}
+// The default set of instruments in the system.
+// This info would be stored in a database, and read based on 
+// user login, and system selection, but while I've got only
+// one, this is fine.
+var default_instruments = [
+	{ name: 'main_fixture',
+	  type: 'fixture',
+	  address: "10.10.2.4:1000"
+	},
+	{ name: 'main_power',
+	  type: 'power',
+	  address: "10.10.2.5:1000"
+	},
+];
 
 // Called from an early filter to initialize the session.
-// Presumes that the 'user' is set and verified: this must be done beforehand.
-// Initializes an array of instruments in the request.  The 'instruments'
-// array in the session will be references as the session in each req instruments
-// member.
-function init_session( session, req )
+// Initializes the data in the session if its not already initialized.
+// This includes the definition of the instruments in the currently
+// selected system.  
+// INCOMPLETE: The "system" is hard-coded now.
+function init_session( req )
 {
+	var session = req.session;
+	if (session.instruments != undefined) {
+		return
+	}
 	session.user = "sbsuth"; // HARD CODED!
 	session.system_index = 0; // HARD CODED!
 	session.systems = ["steves_reef"]; // HARD CODED!
-	session.instruments = [ // HARD CODED!
-		{ name: 'main_fixture',
-		  type: 'fixture',
-		  address: "10.10.2.4:1000"
-		},
-		{ name: 'main_power',
-		  type: 'power',
-		  address: "10.10.2.5:1000"
-		},
-		{ name: 'probes1',
-		  type: 'probes',
-		  address: "10.10.2.6:1000"
-		},
-		{ name: 'probes2',
-		  type: 'probes',
-		  address: "10.10.2.7:1000"
-		}
-	];
-	init_instruments( session, req );
+	session.instruments = default_instruments; // HARD CODED!
+	session.dashboard = dashboard;
+
+	// Allow each module to intialize its instruments.
+	var i;
+	for ( i=0; i < session.instruments.length; i++ ) {
+		var instr = session.instruments[i];
+		get_instr_mod(instr.type).init_session(instr);
+	}
 }
 
 // Fill an object with the basic info needed from the session

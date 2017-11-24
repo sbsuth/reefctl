@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var request = require('request');
 
-var debug_power = 0;
+var debug_power = 1;
 
 /*
  * POST a command to the panel.
@@ -116,6 +116,11 @@ function init_session( session )
 {
 }
 
+// Add fields to 'widget' for the given instr to support the widget just template.
+function init_widget_data( session, instr, widget )
+{
+}
+
 module.exports = {
 	router: router,
 	descr:  {
@@ -123,6 +128,9 @@ module.exports = {
 		label: "Power Panel",
 		main_page: "power_main",
 		widget_page: "power_widget",
+		status_cmd: "stat",
+		status_route: "power_status",
 		init_session: init_session,
+		init_widget_data : init_widget_data
 	}
 };

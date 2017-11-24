@@ -7,6 +7,12 @@ function init_session( session )
 {
 }
 
+// Add fields to 'widget' for the given instr to support the widget just template.
+function init_widget_data( session, instr, widget )
+{
+}
+
+
 module.exports = {
 	router: router,
 	descr:  {
@@ -14,6 +20,8 @@ module.exports = {
 		label: "Probes (pH, temp, etc)",
 		main_page: "probes_main",
 		widget_page: "probes_widget",
+		status_cmd: "stat",
 		init_session: init_session,
+		init_widget_data: init_widget_data
 	}
 };

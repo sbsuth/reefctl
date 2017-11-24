@@ -1,3 +1,14 @@
+ {#load_javascript}
+     <script>
+	function {instr.name}_update(status) {
+		console.log("In power_update");
+	}
+	</script>
+{/load_javascript}
+
+<!--Embed the registration call in an input with the name register_widget-->
+<input type=hidden id=register_widget value=dashboard.register_widget("{status_key}","{instr.name}_update","{instr.name}") />
+
 <h3>Power Panel</h3>
 <button type="button" class="btn btn-default" aria-label="Left Align">
   <span class="glyphicon glyphicon-lamp" aria-hidden="true"></span>

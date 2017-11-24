@@ -4,6 +4,7 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var session = require('express-session')
 
 var mongo = require('mongodb');
 var monk = require('monk');
@@ -47,6 +48,13 @@ app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap-checkbox/dist/js')); // redirect bootstrap JS
 
 
+// Filter to define session.
+app.use(session({
+	secret: 'steves reef',
+    resave: false,
+	saveUninitialized: true
+}))
+
 // Filter to add app-level objects to the request.
 app.use(function(req,res,next){
     req.db = db;
@@ -54,9 +62,9 @@ app.use(function(req,res,next){
 	req.utils = utils;
 	//req.urls = urls;
 
-	var session = {};
-	req.session = session;
-	utils.init_session(session,req);
+	//var session = {};
+	//req.session = session;
+	utils.init_session(req);
 
     next();
 });
@@ -64,7 +72,7 @@ app.use(function(req,res,next){
 app.use('/', routes);
 app.use('/users', users);
 app.use('/test', test);
-app.use('/', dashboard);
+app.use('/', dashboard.router);
 
 utils.setup_instr_routes( app );
 
