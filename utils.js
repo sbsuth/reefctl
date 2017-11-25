@@ -115,10 +115,12 @@ function save_instr_info()
 var default_instruments = [
 	{ name: 'main_fixture',
 	  type: 'fixture',
+	  label: "Light Fixture",
 	  address: "10.10.2.4:1000"
 	},
 	{ name: 'main_power',
 	  type: 'power',
+	  label: 'Power Panel',
 	  address: "10.10.2.5:1000"
 	},
 ];

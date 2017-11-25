@@ -127,6 +127,14 @@ sendCmd: function(event,cmd,instr_name,unit) {
 			alert('Error: ' + response.errorCode + ": " + response.msg);
 		}
 	});
+},
+widgetUpdate: function(instr,data) {
+	// Set the color for each switch in the mini-table.
+	var i;
+	for (i = 0; i < data.on.length; i++ ) {
+		var color = (data.on[i] ? "green" : "red");
+		$('#MP'+i).css('background-color', color);
+	}
 }
 }; // End namespace
 
@@ -134,7 +142,12 @@ sendCmd: function(event,cmd,instr_name,unit) {
 
 $(document).ready(function() {
 
-	var instr_name = $( '#instr_name' )[0].value;
+	var instr_elem = $( '#instr_name' )[0];
+	if (instr_elem == undefined) {
+		// Loading the file as utilities.  Don't initialize"
+		return
+	}
+	var instr_name = instr_elem.value;
 
 	// Setup
 	$(':checkbox').checkboxpicker({

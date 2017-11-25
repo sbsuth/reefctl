@@ -7,3 +7,10 @@
 		padding: 10px;
 }
 
+.mini_switch_table tr {
+		height: 7px;
+}
+
+.mini_switch_table td {
+		width: 7px;
+}

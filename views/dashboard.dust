@@ -1,7 +1,7 @@
 {>"master" /}
 {<title}: Dashboard{/title}
 {<bodyContent}
-<div class="container">
+<div class="container-fluid">
 
   <div class="row">
 
@@ -10,10 +10,16 @@
 	  </div>
 	  <div class="row">
 		{#widgets}
-			<div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
-			  <h2 id={status_key}>{instr.name}</h2>
-			  {@partial_indirect target="widget_body"/}
-			  <p><a class="btn btn-default" href={details_page} role="button">View details &raquo;</a></p>
+			<div class="col-xs-6 col-sm-2 col-md-2 col-lg-1">
+			  <div class="x_panel">
+				 <div class="x_title">
+					<h2>{instr.label}</h2>
+			     </div>
+				 <div class="x_content">
+				    {@partial_indirect target="widget_body"/}
+				    <p><a href={details_page} role="button">details&raquo;</a></p>
+			     </div>
+			  </div>
 			</div>
 		{/widgets}
 	  </div>
