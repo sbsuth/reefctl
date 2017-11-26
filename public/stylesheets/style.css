@@ -1,17 +1,161 @@
 body {
-  padding: 50px;
-  font: 14px "Lucida Grande", Helvetica, Arial, sans-serif;
-}
-
-a {
-  color: #00B7FF;
-}
-
-body {
-    color: #73879C;
-    background: #2A3F54;
+  padding-top: 50px;
+    background: #8B9FB4;
     font-family: "Helvetica Neue",Roboto,Arial,"Droid Sans",sans-serif;
     font-size: 13px;
     font-weight: 400;
     line-height: 1.471;
 }
+
+.navbar {
+	margin-bottom: 0px;
+}
+
+.outer-container {
+	padding-left: 0px;
+	padding-right: 0px;
+}
+
+.title_row {
+	margin-left: 15px;
+	margin-right: 15px;
+	padding-left: 0px;
+	padding-right: 0px;
+}
+
+.title_row h2, h3 {
+	margin-top: 4px;
+	margin-bottom: 10px;
+}
+
+.starter-template {
+  padding: 40px 15px;
+  text-align: center;
+}
+
+.rc_label {
+	font-family: "Arial Black";
+	font-size: medium;
+	font-weight: bold;
+}
+.rc_detail {
+	font-family: "Arial";
+	font-size: medium;
+	font-weight: normal;
+}
+
+.x_panel {
+    width: 100%;
+    padding: 7px 7px;
+    display: inline-block;
+    background: #eee;
+    border: 1px solid #E6E9ED;
+    -webkit-column-break-inside: avoid;
+    -moz-column-break-inside: avoid;
+    column-break-inside: avoid;
+    opacity: 1;
+    transition: all .2s ease;
+	border-radius: 5px
+}
+.x_panel, .x_title {
+    margin-bottom: 5px;
+}
+.x_title {
+    border-bottom: 2px solid lightgray;
+    padding: 1px 3px 3px;
+}
+
+.x_title h2 {
+    margin: 1px 0 1px;
+	font-size: 12px;
+	font-weight: 400;
+    display: block;
+}
+
+.x_panel p {
+    margin: 1px 0 1px;
+	font-size: 12px;
+	font-weight: 400;
+    display: block;
+}
+
+
+.col-lg-1, .col-lg-10, .col-lg-11, .col-lg-12, .col-lg-2, .col-lg-3, .col-lg-4, .col-lg-5, .col-lg-6, .col-lg-7, .col-lg-8, .col-lg-9, .col-md-1, .col-md-10, .col-md-11, .col-md-12, .col-md-2, .col-md-3, .col-md-4, .col-md-5, .col-md-55, .col-md-6, .col-md-7, .col-md-8, .col-md-9, .col-sm-1, .col-sm-10, .col-sm-11, .col-sm-12, .col-sm-2, .col-sm-3, .col-sm-4, .col-sm-5, .col-sm-6, .col-sm-7, .col-sm-8, .col-sm-9, .col-xs-1, .col-xs-10, .col-xs-11, .col-xs-12, .col-xs-2, .col-xs-3, .col-xs-4, .col-xs-5, .col-xs-6, .col-xs-7, .col-xs-8, .col-xs-9 {
+    position: relative;
+    min-height: 1px;
+    float: left;
+    padding-right: 10px;
+    padding-left: 10px;
+}
+
+.row {
+    margin-right: -10px;
+    margin-left: -10px;
+}
+.jumbotron {
+    padding-top: 15px;
+    padding-bottom: 15px;
+    margin-bottom: 15px;
+}
+
+.row_label {
+	vertical-align: top; 
+	text-align: right; 
+	padding: 0 5px;
+}
+
+.w_10 {
+    width: 10%;
+}
+.w_15 {
+    width: 15%;
+}
+.w_20 {
+    width: 20%;
+}
+.w_25 {
+    width: 25%;
+}
+.w_30 {
+    width: 30%;
+}
+.w_35 {
+    width: .25%;
+}
+.w_40 {
+    width: 40%;
+}
+.w_45 {
+    width: .45%;
+}
+.w_50 {
+    width: 50%;
+}
+.w_55 {
+    width: .55%;
+}
+.w_60 {
+    width: 60%;
+}
+.w_75 {
+    width: .75%;
+}
+.w_80 {
+    width: 80%;
+}
+.w_85 {
+    width: .85%;
+}
+.w_90 {
+    width: 90%;
+}
+.w_95 {
+    width: .95%;
+}
+.w_100 {
+    width: 100%;
+}
+.w_35 {
+    width: .25%;
+}
+

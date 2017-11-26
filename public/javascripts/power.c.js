@@ -1,19 +1,25 @@
 
-// Namespace
-var power  = {
+var power = new PageUtils( 1, "POWER", 3000 );
 
-	debug: 2,
-	debug_prefix : "POWER",
-	progresspump : undefined,
-	waiting_status : 0,
-	ignore_status : 0,
-	status_interval : 3000,
+// Begins a periodic query for fixture status.
+// Required signature.
+power.updateStatus = function ()
+{
+	var page = this;
 
-// Functions =============================================================
+    if (page.waiting_status) {
+		return;
+	}
+	page.waiting_status = 1;
+	page.debugMsg("Sending power_status cmd");
+	$.getJSON( '/power_status/'+page.instr_name, function(data) { page.handleStatus( data ) } );
+}
 
-switchChange: function (event) {
+// Event handler for switch press.
+power.switchChange = function (event) {
+	var page = event.data.page;
+
 	var elem = event.target;
-	var instr_name = event.data.instr_name;
 	while (!elem.id) {
 		elem = elem.parentNode;
 	}
@@ -22,95 +28,53 @@ switchChange: function (event) {
 	var checked = $('#'+id+' :checkbox').is(':checked');
 	var cmd = checked ? "on" : "off";
 
-	power.sendCmd(event,cmd,instr_name,unit);
-},
+	power.sendCmd(event,cmd,unit);
+}
 
-stopStatus: function()
-{
-	if (power.progresspump === undefined) {
-	} else {
-		clearInterval(power.progresspump);
-		power.waiting_status = 0;
-		power.progresspump = undefined;
-	}
-},
-
-clearError: function()
-{
-	//var alert_box = $( "#alert_box" );
-	//alert_box.find('p')[0].innerHTML = "";
-	//alert_box.css('aria-hidden',true);
-	//alert_box.hide();
-},
-
-showError: function ( code, message )
-{
-	//var alert_box = $( "#alert_box" );
-	//alert_box.find('p')[0].innerHTML = message + "(" + code + ")";
-	//alert_box.css('aria-hidden',false);
-	//alert_box.show();
-	console.log("ERROR: "+message);
-},
 
 // Start a status update loop if one is not already running.
-updateSwitchStatus: function( instr_name )
+power.handleStatus = function( data )
 {
-	// Do nothing if there's already a loop going.
-	if (power.progresspump !== undefined) {
-		return;
-	}
-	power.waiting_status = 0; // In case its stale from last time?
+	var page = this;
 
-	// Start the pump.
-	power.progresspump = setInterval(function(){
-	  if (!power.waiting_status) {
-		power.waiting_status = 1;
-		if (power.debug > 1) {
-			console.log(power.debug_prefix+": Sending stat cmd");
-		}
-		$.getJSON( '/power_status/'+instr_name, function( data ) {
-			if (data.error === undefined) {
-				if (power.debug > 1) {
-					console.log(power.debug_prefix+": Got switch status: "+data.on);
-				}
-				// Refresh checkboxes from data unless we were asked to ignore.
-				if (power.ignore_status > 0) {
-					power.ignore_status--;
-				} else {
-					var i;
-					for (i = 0; i < data.on.length; i++ ) {
-						$('#P'+i+" :checkbox").prop('checked', data.on[i]);
-					}
-					power.ignore_status = 0; // In case negative.
-				}
-			} else if (data.error == 429) {
-				if (power.debug > 1) {
-					console.log(power.debug_prefix+": Too busy for command");
-				}
-			} else {
-				//power.showError( data.error, data.message );
-				power.stopStatus();
+	if (data.error === undefined) {
+		page.debugMsg("Got switch status: "+data.on);
+		// Refresh checkboxes from data unless we were asked to ignore.
+		if (page.ignore_status > 0) {
+			page.ignore_status--;
+		} else {
+			var i;
+			for (i = 0; i < data.on.length; i++ ) {
+				$('#P'+i+" :checkbox").prop('checked', data.on[i]);
 			}
-			power.waiting_status = 0;
-		});
+			page.ignore_status = 0; // In case negative.
+		}
+	} else if (data.error == 429) {
+		page.debugMsg("Too busy for command");
+	} else {
+		page.showError( data.error, data.message );
+		page.setUpdateInterval(0);
 	}
-  }, power.status_interval);
-},
+	page.waiting_status = 0;
+
+	// Call again at the given interval.
+	page.scheduleStatusUpdate();
+}
 
 // Send command to the power panel.
-sendCmd: function(event,cmd,instr_name,unit) {
+power.sendCmd = function(event,cmd,unit) {
+
+	var page = this;
 
     event.preventDefault();
-	if (power.debug > 1) {
-		console.log(power.debug_prefix+": Sending power panel cmd: "+cmd);
-	}
+	page.debugMsg( "Sending power panel cmd: "+cmd);
 
 	// If there's an outstanding status request, ignore it when the 
 	// result comes in.
-	if (power.waiting_status) {
-		power.ignore_status++;
+	if (page.waiting_status) {
+		page.ignore_status++;
 	}
-	var url = "/power_cmd/" + cmd + "/" + instr_name + "/" + unit
+	var url = "/power_cmd/" + cmd + "/" + page.instr_name + "/" + unit
 	$.ajax({
 		type: 'POST',
 		url: url,
@@ -118,47 +82,54 @@ sendCmd: function(event,cmd,instr_name,unit) {
 
 		// Check for a successful (blank) response
 		if (response.msg === '') {
-			if (power.debug > 1) {
-				console.log(power.debug_prefix+": Back from power panel cmd: "+cmd);
-			}
-			power.updateSwitchStatus( instr_name );
+			page.debugMsg("Back from power panel cmd: "+cmd);
+			page.updateStatus();
 		}
 		else {
-			alert('Error: ' + response.errorCode + ": " + response.msg);
+			page.showError( 0, response.msg );
+			page.setUpdateInterval(0);
 		}
 	});
-},
-widgetUpdate: function(instr,data) {
-	// Set the color for each switch in the mini-table.
+}
+
+// Update function for dashboard widget.
+// Set the color for each switch in the mini-table.
+power.widgetUpdate = function(instr,data) {
+	var page = this;
+
 	var i;
 	for (i = 0; i < data.on.length; i++ ) {
 		var color = (data.on[i] ? "green" : "red");
 		$('#MP'+i).css('background-color', color);
 	}
 }
-}; // End namespace
 
 // DOM Ready =============================================================
 
 $(document).ready(function() {
+
+	var page = power;
 
 	var instr_elem = $( '#instr_name' )[0];
 	if (instr_elem == undefined) {
 		// Loading the file as utilities.  Don't initialize"
 		return
 	}
-	var instr_name = instr_elem.value;
+	page.instr_name = instr_elem.value;
 
 	// Setup
-	$(':checkbox').checkboxpicker({
+	var power_cbs = $('.rc_one_switch_table :checkbox');
+	power_cbs.checkboxpicker({
 		onLabel: "On",
 		offLabel: "Off"
 	});
 
     // button events
-    $(':checkbox').on('change', {instr_name: instr_name}, power.switchChange);
+    power_cbs.on('change', {page: page}, power.switchChange);
+
+	page.setupStandard(page);
 
 	// Start a status loop
-	power.updateSwitchStatus( instr_name );
+	page.updateStatus();
 });
 

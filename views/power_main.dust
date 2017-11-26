@@ -5,9 +5,16 @@
 {/local_style}
 {<bodyContent}
 <input type=hidden id=instr_name value={instr_name} />
-<div class="container">
+<div class="container title_row">
 	<!-- Power container -->
-<h3>Power Panel</h3>
+	<table width=100%><tr>
+	<td width=90%><h3>Power Panel</h3></td>
+	<td> <div class="checkbox checkbox-primary">
+			<input id="monitor_cb" type="checkbox" checked="">
+			<label style="padding: 0px;">Monitor</label>
+		</div>
+	</td>
+	</tr></table>
 </div><!--container-->
 <div class="container">
 	<!-- Switch status container -->
@@ -16,98 +23,27 @@
 		<div class="col-xs-12 col-md-6">
 			<div class="row">
 				  <table class="table table-bordered rc_switch_panel_table">
-					<!-- row for pair of sockets -->
-					<tr>
+					{#switch_rows}
+					  <tr>
+						{#cols}
 						<td>
-							<!-- P0 -->
-							<table class="rc_one_switch_table">
-								  <tr id=P0>
-								    <td><p class="rc_label">P0</p></td>
-									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
-									<td><p class="rc_detail">(unassigned)</p></td>
+						   <div class="row">
+		                     <div class="col-xs-12 col-sm-6">
+							   <table class="rc_one_switch_table">
+								  <tr id=P{i}>
+								    <td><p class="rc_label">P{i}</p></td>
+									<td><input type="checkbox" data-group-cls="btn-group-vertical btn-group-sm" data-reverse></td>
 								  </tr>
-							</table>
+							   </table>
+							 </div>
+							 <div class="col-xs-12 col-sm-6">
+								<p class="rc_detail">{l}</p>
+							 </div>
+                           </div>
 						</td>
-						<td>
-							<!-- P1 -->
-							<table class="rc_one_switch_table">
-								  <tr id=P1>
-								    <td><p class="rc_label">P1</p></td>
-									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
-									<td><p class="rc_detail">(unassigned)</p></td>
-								  </tr>
-							</table>
-						</td>
-					</tr>
-					<!-- row for pair of sockets -->
-					<tr>
-						<td>
-							<!-- P2 -->
-							<table class="rc_one_switch_table">
-								  <tr id=P2>
-								    <td><p class="rc_label">P2</p></td>
-									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
-									<td><p class="rc_detail">(unassigned)</p></td>
-								  </tr>
-							</table>
-						</td>
-						<td>
-							<!-- P3 -->
-							<table class="rc_one_switch_table">
-								  <tr id=P3>
-								    <td><p class="rc_label">P3</p></td>
-									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
-									<td><p class="rc_detail">(unassigned)</p></td>
-								  </tr>
-							</table>
-						</td>
-					</tr>
-					<!-- row for pair of sockets -->
-					<tr>
-						<td>
-							<!-- P4 -->
-							<table class="rc_one_switch_table">
-								  <tr id=P4>
-								    <td><p class="rc_label">P4</p></td>
-									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
-									<td><p class="rc_detail">(unassigned)</p></td>
-								  </tr>
-							</table>
-						</td>
-						<td>
-							<!-- P5 -->
-							<table class="rc_one_switch_table">
-								  <tr id=P5>
-								    <td><p class="rc_label">P5</p></td>
-									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
-									<td><p class="rc_detail">(unassigned)</p></td>
-								  </tr>
-							</table>
-						</td>
-					</tr>
-					<!-- row for pair of sockets -->
-					<tr>
-						<td>
-							<!-- P6 -->
-							<table class="rc_one_switch_table">
-								  <tr id=P6>
-								    <td><p class="rc_label">P6</p></td>
-									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
-									<td><p class="rc_detail">(unassigned)</p></td>
-								  </tr>
-							</table>
-						</td>
-						<td>
-							<!-- P7 -->
-							<table class="rc_one_switch_table">
-								  <tr id=P7>
-								    <td><p class="rc_label">P7</p></td>
-									<td><input type="checkbox" data-group-cls="btn-group-vertical" data-reverse></td>
-									<td><p class="rc_detail">(unassigned)</p></td>
-								  </tr>
-							</table>
-						</td>
-					</tr>
+						{/cols}
+					  </tr>
+					{/switch_rows}
 					</table>
 			</div>
 		</div><!--col-->

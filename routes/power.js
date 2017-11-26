@@ -107,6 +107,12 @@ router.get('/power_main/:instr_name', function(req, res) {
 	var d = utils.get_master_template_data(req);
 	d.load_javascript.push( "/js/power.c.js" );
 	d.instr_name = instr_name;
+	d.switch_rows = [
+					{cols: [{i:0, l:"Power Head #1"},  {i:1, l:"Power Head #2"}]},
+					{cols: [{i:2, l:"Stand Light"},    {i:3, l:"Reactor"}]},
+					{cols: [{i:4, l:"(unused)"},      {i:5, l:"(unused)"}]},
+					{cols: [{i:6, l:"(unused)"},      {i:7, l:"(unused)"}]}
+				 ];
 	res.locals.session = req.session;
 	res.render("power_main", d );
 });

@@ -146,6 +146,7 @@ function init_session( req )
 	var i;
 	for ( i=0; i < session.instruments.length; i++ ) {
 		var instr = session.instruments[i];
+		instr.mod = get_instr_mod(instr.type);
 		get_instr_mod(instr.type).init_session(instr);
 	}
 }

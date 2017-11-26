@@ -7,6 +7,11 @@
 		padding: 10px;
 }
 
+.rc_detail {
+		margin-bottom: 0;
+		margin-left: 10px;
+}
+
 .mini_switch_table tr {
 		height: 7px;
 }

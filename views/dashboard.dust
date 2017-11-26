@@ -1,30 +1,40 @@
 {>"master" /}
 {<title}: Dashboard{/title}
 {<bodyContent}
-<div class="container-fluid">
-
-  <div class="row">
-
-	<div class="col-xs-12">
-	  <div class="jumbotron">
-	  </div>
-	  <div class="row">
-		{#widgets}
-			<div class="col-xs-6 col-sm-2 col-md-2 col-lg-1">
-			  <div class="x_panel">
-				 <div class="x_title">
-					<h2>{instr.label}</h2>
-			     </div>
-				 <div class="x_content">
-				    {@partial_indirect target="widget_body"/}
-				    <p><a href={details_page} role="button">details&raquo;</a></p>
-			     </div>
-			  </div>
+<div class="container-fluid outer-container">
+	<div class="container title_row">
+		<table width=100%><tr>
+		<td width=90%><h3>Dashboard</h3></td>
+		<td> <div class="checkbox checkbox-primary">
+				<input id="monitor_cb" type="checkbox" checked="">
+				<label style="padding: 0px;">Monitor</label>
 			</div>
-		{/widgets}
-	  </div>
-	</div>
-  </div>
+		</td>
+		</tr></table>
+  </div><!--container-->
 
+	<div class="container-fluid">
+		<div class="row">
+			<div class="col-xs-12">
+				<div class="jumbotron">
+				</div>
+				<div class="row">
+				{#widgets}
+					<div class="col-xs-6 col-sm-2 col-md-2 col-lg-1">
+						<div class="x_panel">
+						 <div class="x_title">
+							<h2>{instr.label}</h2>
+							 </div>
+						 <div class="x_content">
+								{@partial_indirect target="widget_body"/}
+								<p><a href={details_page} role="button">details&raquo;</a></p>
+							 </div>
+						</div>
+					</div>
+				{/widgets}
+				</div>
+			</div>
+		</div>
+	</div>
 </div><!-- /.container -->
 {/bodyContent}
