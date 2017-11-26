@@ -1,5 +1,5 @@
 <!--Embed the registration call in an input with the name register_widget-->
-<input type=hidden id=register_widget value=dashboard.register_widget("{status_key}","{instr.name}","power.widgetUpdate","/js/power.c.js","/stylesheets/power.css") />
+<input type=hidden class="register_widget" value=dashboard.register_widget("{status_key}","{instr.name}","power.widgetUpdate","/js/power.c.js","/stylesheets/power.css") />
 
 <table border=1 class="mini_switch_table">
 	<tr><td id=MP0 /><td id=MP1 /> </tr>

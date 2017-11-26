@@ -1,0 +1,6 @@
+<!--Embed the registration call in an input with the name register_widget-->
+<input type=hidden class="register_widget" value=dashboard.register_widget("{status_key}","{instr.name}","temp.widgetUpdate","/js/temp.c.js") />
+<button type="button" class="btn btn-default" aria-label="Left Align">
+  <span class="glyphicon glyphicon-cloud" aria-hidden="true"></span>
+  Details
+</button>

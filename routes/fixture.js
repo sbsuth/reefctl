@@ -125,7 +125,9 @@ function init_widget_data( session, instr, widget )
 
 module.exports = {
 	router: router,
-	descr:  {
+	name: "fixture",
+	instrs: [ 
+	  {
 		name: "fixture",
 		label: "Lighting fixture",
 		main_page: "fixture_main",
@@ -134,5 +136,6 @@ module.exports = {
 		status_route: "fixture_height",
 		init_session: init_session,
 		init_widget_data: init_widget_data
-	}
+	  }
+	]
 };

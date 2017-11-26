@@ -14,6 +14,7 @@ dashboard.icur = 0;
 // update funcs round-robbin.  The route in the key is used to get the status.
 dashboard.register_widget = function ( full_key, instr_name, update_func_name, js, css) {
 
+console.log("In register_widget("+full_key+","+instr_name);
 	// We use the address and 
 	var key_tokens = full_key.split(';');
 	var status_key = key_tokens[0] + ";" + key_tokens[1];
@@ -107,7 +108,7 @@ $(document).ready(function() {
 
 	// Each widget can have an element with id=register_func whose value is a function call.
 	// Call each of them.  'value' is a string, so use eval().
-	$('#register_widget').each( function(index,item) { eval(item.value); } );
+	$('.register_widget').each( function(index,item) { eval(item.value); } );
 
 	page.setupStandard(page);
 	page.updateStatus();

@@ -50,30 +50,41 @@ function setup_session( session )
 			};
 }
 
-var instr_mod_names = [
+// Instrument route names: one per file containing routes.
+var instr_route_names = [
 	"fixture",
-	"probes",
-	"power"
+	"power",
+	"stand",
 ];
+var instr_routes = [];
 
+// Instrument module names: one per kind of instrument.
+var instr_mod_names = [];
 var instr_mods = [];
+
 var dashboard = undefined;
 
 function load_instr_mods()
 {
-	for ( i=0; i < instr_mod_names.length; i++ ) {
-		var name = instr_mod_names[i];
+	for ( i=0; i < instr_route_names.length; i++ ) {
+		var name = instr_route_names[i];
 		var mod = require('./routes/'+name);
-		instr_mods[name] = mod;
+		instr_routes[name] = mod;
 	}
 }
 
 function setup_instr_routes( app )
 {
-	for ( i=0; i < instr_mod_names.length; i++ ) {
-		var name = instr_mod_names[i];
-		var mod = instr_mods[name];
+	for ( i=0; i < instr_route_names.length; i++ ) {
+		var name = instr_route_names[i];
+		var mod = instr_routes[name];
 		app.use('/', mod.router);
+
+		// Collect the instr_mods from the instrs arrays in the module.
+		for ( j=0; j < mod.instrs.length; j++ ) {
+			var instr = mod.instrs[j];
+			instr_mods[instr.name] = instr;
+		}
 	}
 }
 
@@ -84,7 +95,7 @@ function get_instr_mod( kind )
 	if (mod === undefined) {
 		return undefined;
 	} else {
-		return mod.descr;
+		return mod;
 	}
 }
 
@@ -122,6 +133,11 @@ var default_instruments = [
 	  type: 'power',
 	  label: 'Power Panel',
 	  address: "10.10.2.5:1000"
+	},
+	{ name: 'temp_control',
+	  type: 'temp',
+	  label: "Temperature Controller",
+	  address: "10.10.2.7:1000"
 	},
 ];
 

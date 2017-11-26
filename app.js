@@ -28,8 +28,6 @@ var utils = require("./utils");
 utils.init_dust_helpers( dust );
 utils.load_instr_mods();
 
-//var urls = [];
-//urls['fixture'] = '10.10.2.4:1000';
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));

@@ -2,32 +2,28 @@ var express = require('express');
 var router = express.Router();
 var request = require('request');
 
-var debug_power = 1;
+var debug_stand = 1;
 
 /*
- * POST a command to the panel.
+ * POST a command to the stand.
  */
-router.post('/power_cmd/:cmd/:instr_name/:unit', function(req, res) {
+router.post('/stand_cmd/:cmd/:instr_name', function(req, res) {
 
 	var utils = req.utils;
     var cmd = req.params.cmd;
 	var instr_name = req.params.instr_name;
-	var unit = req.params.unit;
 	var instr = utils.get_instr_by_name(req,instr_name);
 	if (instr === undefined) {
-		utils.send_error( res, "power panel \'"+instr_name+"\' unknown.");
+		utils.send_error( res, "stand \'"+instr_name+"\' unknown.");
 		return;
 	}
-	if (unit >= 0) {
-		cmd += " " +unit;
-	}
 	var url = instr.address;
-	if (debug_power) {
-		console.log("POWER: Incoming command: "+cmd);
+	if (debug_stand) {
+		console.log("STAND: Incoming command: "+cmd);
 	}
 	utils.queue_instr_cmd( instr, function () {
-		if (debug_power) {
-			console.log("POWER: Sending "+cmd+" command from server");
+		if (debug_stand) {
+			console.log("STAND: Sending "+cmd+" command from server");
 		}
 		request.post(
 				'http://' + url,
@@ -36,12 +32,12 @@ router.post('/power_cmd/:cmd/:instr_name/:unit', function(req, res) {
 				},
 				function (error, response, body) {
 					if (!error && response.statusCode == 200) {
-						if (debug_power) {
-							console.log("POWER: Got "+cmd+" response in server");
+						if (debug_stand) {
+							console.log("STAND: Got "+cmd+" response in server");
 						}
 						res.send( { msg: '', body: body } );
 					} else {
-						utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to power panel "+instr_name);
+						utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name);
 					}
 					utils.instr_cmd_done( instr );
 				}
@@ -50,25 +46,25 @@ router.post('/power_cmd/:cmd/:instr_name/:unit', function(req, res) {
 });
 
 //
-// GET switch_status query.
+// GET stand_status query.
 //
-router.get('/power_status/:instr_name', function(req, res) {
+router.get('/stand_status/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
 	var instr = utils.get_instr_by_name(req,instr_name);
 	if (instr === undefined) {
-		utils.send_error( res, "ERROR: power panel \'"+instr_name+"\' unknown.");
+		utils.send_error( res, "ERROR: stand instrument \'"+instr_name+"\' unknown.");
 		return;
-	}
-	if (debug_power) {
-		console.log("POWER: Incoming power panel status request");
 	}
 	var url = instr.address;
 	var cmd = "stat";
 
+	if (debug_stand) {
+		console.log("STAND: Incoming stand status");
+	}
 	utils.queue_instr_cmd( instr, function () {
-		if (debug_power) {
-			console.log("POWER: Sending "+cmd+" command from server");
+		if (debug_stand) {
+			console.log("STAND: Sending "+cmd+" command from server");
 		}
 		request.get(
 			'http://' + url,
@@ -78,12 +74,12 @@ router.get('/power_status/:instr_name', function(req, res) {
 			},
 			function (error, response, body) {
 				if (!error && response.statusCode == 200) {
-					if (debug_power) {
-						console.log("POWER: Got "+cmd+" response in server");
+					if (debug_stand) {
+						console.log("STAND: Got "+cmd+" response in server");
 					}
 					res.json( body );
 				} else {
-					utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to power panel "+instr_name);
+					utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name);
 				}
 				utils.instr_cmd_done( instr );
 			}
@@ -94,29 +90,22 @@ router.get('/power_status/:instr_name', function(req, res) {
 
 
 /*
- * GET power_main.
+ * GET temp_main.
  */
-router.get('/power_main/:instr_name', function(req, res) {
+router.get('/temp_main/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
 	var instr = utils.get_instr_by_name(req,instr_name);
 	if (instr === undefined) {
-		utils.send_error( res, "power panel \'"+instr_name+"\' unknown.");
+		utils.send_error( res, "temp control instrument \'"+instr_name+"\' unknown.");
 		return;
 	}
 	var d = utils.get_master_template_data(req);
-	d.load_javascript.push( "/js/power.c.js" );
+	d.load_javascript.push( "/js/temp.c.js" );
 	d.instr_name = instr_name;
-	d.switch_rows = [
-					{cols: [{i:0, l:"Power Head #1"},  {i:1, l:"Power Head #2"}]},
-					{cols: [{i:2, l:"Stand Light"},    {i:3, l:"Reactor"}]},
-					{cols: [{i:4, l:"(unused)"},      {i:5, l:"(unused)"}]},
-					{cols: [{i:6, l:"(unused)"},      {i:7, l:"(unused)"}]}
-				 ];
 	res.locals.session = req.session;
-	res.render("power_main", d );
+	res.render("temp_main", d );
 });
-
 
 function init_session( session )
 {
@@ -127,19 +116,19 @@ function init_widget_data( session, instr, widget )
 {
 }
 
+
 module.exports = {
 	router: router,
-	name: "power",
-	instrs: [ 
-	  {
-		name: "power",
-		label: "Power Panel",
-		main_page: "power_main",
-		widget_page: "power_widget",
+	name: "stand",
+	instrs: [
+	  { name: "temp",
+		label: "Temperature controller",
+		main_page: "temp_main",
+		widget_page: "temp_widget",
 		status_cmd: "stat",
-		status_route: "power_status",
+		status_route: "stand_status",
 		init_session: init_session,
-		init_widget_data : init_widget_data
+		init_widget_data: init_widget_data
 	  }
 	]
 };

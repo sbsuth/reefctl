@@ -1,0 +1,48 @@
+{>"master" /}
+{<title}: Temperature Controller{/title}
+{<bodyContent}
+<input type=hidden id=instr_name value={instr_name} />
+<div class="container-fluid outer-container">
+	<div class="container title_row">
+		<table width=100%><tr>
+		<td width=90%><h3>Temperature Controller</h3></td>
+		<td> <div class="checkbox checkbox-primary">
+				<input id="monitor_cb" type="checkbox" checked="">
+				<label style="padding: 0px;">Monitor</label>
+			</div>
+		</td>
+		</tr></table>
+	</div><!--container-->
+	<div class="container-fluid">
+		<div class="row">
+			<!-- Height status bar -->
+			<div class="col-xs-12 col-md-6">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>Current Temp</h2>
+				 </div>
+				 <div class="x_content">
+					<div class="row">
+						<div class="col-xs-12">
+							<!-- Column for height prog bar -->
+							<table width=100%><tr>
+								<td><p>XXX</p></td>
+								<td><p>YYY</p></td>
+							</tr></table>
+						</div>
+					</div>
+				 </div>
+				</div>
+			</div><!--col-->
+		</div><!--row-->
+	</div><!--container-->
+	<div class="container" >
+		<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
+		 <table><tr>
+			 <td><p/></td>
+			 <td><button type="button" aria-hidden="true" onclick="page.clearError()">&times;</button></td>
+		</tr></table>
+		</div>
+	</div>
+</div><!--container-->
+{/bodyContent}
