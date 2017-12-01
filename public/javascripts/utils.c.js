@@ -80,5 +80,101 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		}
 		setTimeout( function() { page.updateStatus() }, page.status_interval );
 	}
+	// Updates a calibration wizard, moving from iprev to the next step.
+	this.calStep = function(cal,iprev) {
+
+		var page = this;
+		var inext = iprev + 1;
+
+		if (iprev >= 0) {
+			// Send the last value.
+			// CHECK FOR LEGAL VALUE.
+			// SEND THE VALUE.
+			// VERIFY SUCCESS, and SET STATUS.
+			var cell = cal.cells[iprev];
+			var value = cell.value.val();
+			if (inext == cal.cells.length) {
+				cal.stat.text("Calibration comple!");
+			} else {
+				cal.stat.text("Successfully sent calibration value for "+cell.value.attr('placeholder'));
+			}
+
+			// Check and disable iprev.
+			cell.value.prop('disabled',true);
+			cell.send.prop('disabled',true);
+			cell.send.find('i').removeClass('glyphicon-upload glyphicon-unchecked').addClass('glyphicon-check');
+		} else {
+			cal.stat.text("Ready to begin calibration");
+		}
+
+		// Enable the next row to be entered.
+		if (inext < cal.cells.length) {
+			var cell = cal.cells[inext];
+			cell.value.prop('disabled',false);
+			cell.send.prop('disabled',false);
+			cell.send.find('i').removeClass('glyphicon-unchecked glyphicon-check').addClass('glyphicon-upload');
+			cell.send.on('click', function() {page.calStep(cal,inext);} );
+			if (cal.help != undefined) {
+				var substText = cell.value.attr('placeholder');
+				var text = 
+				cal.help.help.text( cal.help.help_text.replace('_label_',substText));
+			}
+		} else {
+			if (cal.help != undefined) {
+				cal.help.help.text('');
+			}
+		}
+
+		// Disable all the following steps
+		for ( var istep=inext+1; istep < cal.cells.length; istep++ ) {
+			var cell = cal.cells[istep];
+			cell.value.prop('disabled',true);
+			cell.send.prop('disabled',true);
+			cell.send.find('i').removeClass('glyphicon-upload glyphicon-upload').addClass('glyphicon-unchecked');
+		}
+	}
+
+	// Calibration session started or stopped.
+	this.calStartStop = function( event, id ) {
+		var page = this;
+		var row = $('#cal_'+id+"_row");
+		if (row == undefined) {
+			return;
+		}
+		// Find the elements.
+		var stat = $('#cal_'+id+'_status'); 
+		var help = $('#cal_'+id+'_help'); // Control we will set.  Maybe missing.
+		if (help.length) {
+			var help_text = $('#cal_'+id+'_help_text'); // hidden input with text.
+			help = {help: help, help_text: help_text.val()};
+		}
+		// Find as many steps as there are.
+		var istep = 0;
+		var cells = [];
+		while (1) {
+			var cell = $('#cal_'+id+'_step_'+istep+'_cell');
+			var value = $('#cal_'+id+'_step_'+istep+'_value');
+			var send = $('#cal_'+id+'_step_'+istep+'_send');
+			if (!cell.length || !value.length || !send.length) {
+				break;
+			}
+			cells.push( {cell: cell, value: value, send: send} );
+			value.val(''); // Clear old value.
+			istep++;
+		}
+
+		if (cells.length == 0) {
+			return;
+		}
+
+		var vis = row.is(":visible");
+		if (vis) {
+			return; // Quit.
+		}
+
+		page.calStep( {cells:cells, help: help, stat: stat}, -1 );
+
+	}
+
 }
 

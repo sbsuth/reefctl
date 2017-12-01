@@ -79,6 +79,9 @@ $(document).ready(function() {
 	}
 	page.instr_name = instr_elem.value;
 
+    $('#cal_disp_open').on('click', function (event) {page.calStartStop(event,"disp");});
+    $('#cal_sump_open').on('click', function (event) {page.calStartStop(event,"sump");});
+
 	page.setupStandard(page);
 	page.updateStatus();
 });

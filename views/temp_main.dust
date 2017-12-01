@@ -15,8 +15,8 @@
 	</div><!--container-->
 	<div class="container-fluid">
 		<div class="row">
-			<!-- Height status bar -->
-			<div class="col-xs-12 col-md-6">
+			<!-- Current temp -->
+			<div class="col-xs-12 col-sm-6">
 				<div class="x_panel">
 				 <div class="x_title">
 					<h2>Current Temp</h2>
@@ -25,11 +25,97 @@
 					<div class="row">
 						<div class="col-xs-12">
 							<!-- Column for height prog bar -->
-							<table width=100%><tr>
-								<td><p>XXX</p></td>
-								<td><p>YYY</p></td>
-							</tr></table>
+							<table class="x_table" width=100%>
+							<tr class=x_row_emphasize><td class="w_30">Average</td><td id=t_ave>(pending)</td></tr>
+							<tr class=x_row_deemphasize><td>Display</td><td id=t_disp>(pending)</td></tr>
+							<tr class=x_row_deemphasize><td>Sump</td><td id=t_sump>(pending)</td></tr>
+							</table>
 						</div>
+					</div>
+				 </div>
+				</div>
+			</div><!--col-->
+			<!-- Current temp -->
+			<div class="col-xs-12 col-sm-6">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>Settings</h2>
+				 </div>
+				 <div class="x_content">
+					<div class="row">
+						<div class="col-xs-12">
+							<!-- Column for height prog bar -->
+							<table class="x_table" width=100%>
+							<tr class=x_row_emphasize>
+								<td class="w_30">Target Temp (&#8457;)</td>
+								<td id=target_temp>
+									<div class="input-group input-group-sm">
+										<input type="text" class="form-control" placeholder="TargetTemp" id=targetTemp>
+										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setTargetTemp"><i class="glyphicon glyphicon-upload"/></button> </span>
+									</div><!-- /input-group -->
+								</td>
+							</tr>
+							<tr class=x_row_deemphasize>
+								<td class="w_30">Sampling period (ms)</td>
+								<td id=sample>
+									<div class="input-group input-group-sm">
+										<input type="text" class="form-control" placeholder="Sample period" id=samplePeriod>
+										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setSamplePeriod"><i class="glyphicon glyphicon-upload"/></button> </span>
+									</div><!-- /input-group -->
+								</td>
+							</tr>
+							<tr class=x_row_deemphasize>
+								<td class="w_30">Sensitivity (&#8457;)</td>
+								<td id=sensitivity>
+									<div class="input-group input-group-sm">
+										<input type="text" class="form-control" placeholder="Sensitivity" id=sensitivity>
+										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setSensitivity"><i class="glyphicon glyphicon-upload"/></button> </span>
+									</div><!-- /input-group -->
+								</td>
+							</tr>
+							</table>
+						</div>
+					</div>
+				 </div>
+				</div>
+			</div><!--col-->
+			<div class="col-xs-12 col-sm-6">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>Calibration</h2>
+				 </div>
+				 <div class="x_content">
+					<div class="row">
+						{#cal_items}
+							<div class="col-xs-12">
+							  <table class="x_table" width=100%>
+								<tr class=x_row><td><button class="btn-xs" data-toggle="collapse" data-target="#cal_{id}_row" id="cal_{id}_open">{label}</button></td></tr>
+								  <tr id=cal_{id}_row class=collapse><td>
+									<table class="x_table w_100">
+									  {#steps}
+										<tr class="x_row">
+										{?help}
+											<input type=hidden id=cal_{id}_help_text value="{help}" />
+											<td class="w_30">Instructions:</td><td id=cal_{id}_help></td>
+										{:else}
+											<td class="w_30">{label} {units|s}</td>
+											<td id=cal_{id}_step_{i}_cell>
+												<div class="input-group input-group-sm">
+													<input type="text" class="form-control" placeholder="{label}" id=cal_{id}_step_{i}_value>
+													<span class="input-group-btn"> <button class="btn btn-default" type="button" id="cal_{id}_step_{i}_send"><i class="glyphicon"/></button> </span>
+												</div><!-- /input-group -->
+											</td>
+										 {/help}
+										</tr>
+									  {/steps}
+									  <tr class="x_row">
+										<td class="w_30">Status:</td><td id=cal_{id}_status></td>
+									  </tr>
+									</table>
+								  </td></tr>
+								</table>
+							</div>
+						{/cal_items}
 					</div>
 				 </div>
 				</div>

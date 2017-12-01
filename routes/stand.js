@@ -100,9 +100,30 @@ router.get('/temp_main/:instr_name', function(req, res) {
 		utils.send_error( res, "temp control instrument \'"+instr_name+"\' unknown.");
 		return;
 	}
+	var calHelp = "Measure temperature for \'_label_\' and click to send";
 	var d = utils.get_master_template_data(req);
 	d.load_javascript.push( "/js/temp.c.js" );
 	d.instr_name = instr_name;
+	d.cal_items = [
+					{label: "Calibrate Display Temp Probe",
+					 id: "disp",
+					 steps: [
+						{ help: calHelp }, 
+						{ i: 0, label: "Low", units: "(&#8457;)"},
+						{ i: 1, label: "Mid", units: "(&#8457;)"},
+						{ i: 2, label: "High", units: "(&#8457;)"}
+					 ]
+					},
+					{label: "Calibrate Sump Temp Probe",
+					 id: "sump",
+					 steps: [
+						{ help: calHelp }, 
+						{ i: 0, label: "Low", units: "(&#8457;)"},
+						{ i: 1, label: "Mid", units: "(&#8457;)"},
+						{ i: 2, label: "High", units: "(&#8457;)"}
+					 ]
+					}
+				 ];
 	res.locals.session = req.session;
 	res.render("temp_main", d );
 });
