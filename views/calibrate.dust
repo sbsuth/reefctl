@@ -1,0 +1,31 @@
+		{! A table containing a calibration wizard. !}
+		{! Expects 'id' in data to identify the wizard. !}
+		{! Works utils.js.calStartStop !}
+
+		<table class="x_table" width=100%>
+		<tr class=x_row><td><button class="btn-xs" data-toggle="collapse" data-target="#cal_{id}_row" id="cal_{id}_open">{label}</button></td></tr>
+			<tr id=cal_{id}_row class=collapse><td>
+			<table class="x_table w_100">
+				{#steps}
+				<tr class="x_row">
+				{?help}
+					<input type=hidden id=cal_{id}_help_text value="{help}" />
+					<td class="w_30">Instructions:</td><td id=cal_{id}_help></td>
+				{:else}
+					<td class="w_30">{label} {units|s}</td>
+					<td id=cal_{id}_step_{i}_cell>
+						<div class="input-group input-group-sm">
+							<input type="text" class="form-control" placeholder="{label}" id=cal_{id}_step_{i}_value>
+							<span class="input-group-btn"> <button class="btn btn-default" type="button" id="cal_{id}_step_{i}_send"><i class="glyphicon"/></button> </span>
+						</div><!-- /input-group -->
+					</td>
+				 {/help}
+				</tr>
+				{/steps}
+				<tr class="x_row">
+				<td class="w_30">Status:</td><td id=cal_{id}_status></td>
+				</tr>
+			</table>
+			</td></tr>
+		</table>
+
