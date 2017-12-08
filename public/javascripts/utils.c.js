@@ -21,8 +21,10 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 
 	this.showError = function ( code, message ) {
 		var alert_box = $( "#alert_box" );
-		var msgText = "ERROR: " + this.debug_prefix + ": " + message + "(" + code + ")";
-		console.log("HEY: alert_box="+JSON.stringify(alert_box));
+		var msgText = "ERROR: " + this.debug_prefix + ": " + message;
+		if (code > 0) {
+			msgText += "(" + code + ")";
+		}
 		if ((alert_box != undefined) && (Object.keys(alert_box).length > 0)) {
 			alert_box.find('p')[0].innerHTML = msgText;
 			alert_box.css('aria-hidden',false);
@@ -80,31 +82,17 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		}
 		setTimeout( function() { page.updateStatus() }, page.status_interval );
 	}
-	// Updates a calibration wizard, moving from iprev to the next step.
-	this.calStep = function(cal,iprev) {
-
+	
+	// Enable/disable calibration elements.
+	this.calEnable = function( cal, iprev ) {
 		var page = this;
 		var inext = iprev + 1;
-
 		if (iprev >= 0) {
-			// Send the last value.
-			// CHECK FOR LEGAL VALUE.
-			// SEND THE VALUE.
-			// VERIFY SUCCESS, and SET STATUS.
+			// Disable iprev.
 			var cell = cal.cells[iprev];
-			var value = cell.value.val();
-			if (inext == cal.cells.length) {
-				cal.stat.text("Calibration comple!");
-			} else {
-				cal.stat.text("Successfully sent calibration value for "+cell.value.attr('placeholder'));
-			}
-
-			// Check and disable iprev.
 			cell.value.prop('disabled',true);
 			cell.send.prop('disabled',true);
 			cell.send.find('i').removeClass('glyphicon-upload glyphicon-unchecked').addClass('glyphicon-check');
-		} else {
-			cal.stat.text("Ready to begin calibration");
 		}
 
 		// Enable the next row to be entered.
@@ -134,6 +122,63 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		}
 	}
 
+	// Updates a calibration wizard, moving from iprev to the next step.
+	this.calStep = function(cal,iprev) {
+
+		var page = this;
+		var inext = iprev + 1;
+
+		if (iprev >= 0) {
+			// Send a step.
+			var url = cal.cmd + "/" + iprev;
+			var cell = cal.cells[iprev];
+			var value = cell.value.val();
+			if (cell.value.is(":visible")) {
+				// If there is a value to be entered, make sure its a number.
+				if (isNaN(value)) {
+					page.showError("Must enter a number",0);
+					cell.value.select();
+					cell.value.focus();
+					return;
+				}
+				url += "/" + value;
+			}
+			// Send the calibration commens.
+			page.debugMsg("Sending command: \'"+url+"\'");
+			cal.stat.text("Performing calibration step...");
+			cell.send.prop('disabled',true);
+			$.ajax({
+				type: 'POST',
+				url: url,
+			}).done(function( response ) {
+				// Check for a successful (blank) response with a true value.
+				if ((response.msg === '') && (response.body.value == true)) {
+					page.debugMsg("Calibration step succeeded");
+
+					// Update status.
+					if (inext == cal.cells.length) {
+						cal.stat.text("Calibration comple!");
+					} else {
+						cal.stat.text("Successfully sent calibration value for "+cell.value.attr('placeholder'));
+					}
+
+					// Update enables for the next step.
+					page.calEnable( cal, iprev );
+				}
+				else {
+					cal.stat.text("Error performing calibration step!");
+					page.showError( 0, (response.msg != "") ? response.msg : " instrument error");
+					cell.send.prop('disabled',false);
+				}
+
+			});
+		} else {
+			page.calEnable( cal, iprev );
+			cal.stat.text("Ready to begin calibration");
+		}
+
+	}
+
 	// Calibration session started or stopped.
 	this.calStartStop = function( event, id ) {
 		var page = this;
@@ -143,6 +188,7 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		}
 		// Find the elements.
 		var stat = $('#cal_'+id+'_status'); 
+		var cmd = $('#cal_'+id+'_cmd').val(); 
 		var help = $('#cal_'+id+'_help'); // Control we will set.  Maybe missing.
 		if (help.length) {
 			var help_text = $('#cal_'+id+'_help_text'); // hidden input with text.
@@ -172,8 +218,18 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 			return; // Quit.
 		}
 
-		page.calStep( {cells:cells, help: help, stat: stat}, -1 );
+		page.calStep( {cells:cells, help: help, stat: stat, cmd: cmd}, -1 );
 
+	}
+
+	// Convert seconds to H:M:S
+	this.StoHMS = function( sec ) {
+		if (isNaN(sec)) {
+			return "";
+		}
+		var t = new Date(null);
+		t.setSeconds(sec);
+		return t.toISOString().substr(11, 8);
 	}
 
 }

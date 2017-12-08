@@ -7,10 +7,13 @@ var debug_stand = 1;
 /*
  * POST a command to the stand.
  */
-router.post('/stand_cmd/:cmd/:instr_name', function(req, res) {
+router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?', function(req, res) {
 
 	var utils = req.utils;
-    var cmd = req.params.cmd;
+    var cmd = req.params.cmd
+				+ ((req.params.arg1 != undefined) ? " "+req.params.arg1 : "")
+				+ ((req.params.arg2 != undefined) ? " "+req.params.arg2 : "")
+				+ ((req.params.arg3 != undefined) ? " "+req.params.arg3 : "")
 	var instr_name = req.params.instr_name;
 	var instr = utils.get_instr_by_name(req,instr_name);
 	if (instr === undefined) {
@@ -28,12 +31,13 @@ router.post('/stand_cmd/:cmd/:instr_name', function(req, res) {
 		request.post(
 				'http://' + url,
 				{ headers: { 'suth-cmd': cmd },
-				  json: true 
+				  json: true,
+				  timeout: 5000
 				},
 				function (error, response, body) {
 					if (!error && response.statusCode == 200) {
 						if (debug_stand) {
-							console.log("STAND: Got "+cmd+" response in server");
+							console.log("STAND: Got "+cmd+" response in server:"+JSON.stringify(response.body));
 						}
 						res.send( { msg: '', body: body } );
 					} else {
@@ -107,6 +111,8 @@ router.get('/temp_main/:instr_name', function(req, res) {
 	d.cal_items = [
 					{label: "Calibrate Display Temp Probe",
 					 id: "disp",
+					 cmd: "/stand_cmd/calt/"+instr_name+"/0",
+					 has_value: true,
 					 steps: [
 						{ help: calHelp }, 
 						{ i: 0, label: "Low", units: "(&#8457;)"},
@@ -116,6 +122,8 @@ router.get('/temp_main/:instr_name', function(req, res) {
 					},
 					{label: "Calibrate Sump Temp Probe",
 					 id: "sump",
+					 cmd: "/stand_cmd/calt/"+instr_name+"/1",
+					 has_value: true,
 					 steps: [
 						{ help: calHelp }, 
 						{ i: 0, label: "Low", units: "(&#8457;)"},

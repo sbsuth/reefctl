@@ -22,13 +22,12 @@
 				{#widgets}
 					<div class="col-xs-6 col-sm-2 col-md-2 col-lg-1">
 						<div class="x_panel">
-						 <div class="x_title">
-							<h2>{instr.label}</h2>
-							 </div>
-						 <div class="x_content">
-								{@partial_indirect target="widget_body"/}
-								<p><a href={details_page} role="button">details&raquo;</a></p>
-							 </div>
+						   <div class="x_title">
+							  <h2><a href={details_page}>{instr.label}</a></h2>
+						   </div>
+						   <div class="x_content">
+							 {@partial_indirect target="widget_body"/}
+						   </div>
 						</div>
 					</div>
 				{/widgets}

@@ -189,7 +189,7 @@ function send_error( res, msg )
 // Indexed by URL.
 // Each queue is an array of functions.
 var instr_cmd_queue = [];
-var debug_queue = 0;
+var debug_queue = 1;
 
 function queue_instr_cmd( instr, func, res )
 {

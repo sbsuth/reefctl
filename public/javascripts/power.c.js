@@ -36,7 +36,6 @@ power.switchChange = function (event) {
 power.handleStatus = function( data )
 {
 	var page = this;
-
 	if (data.error === undefined) {
 		page.debugMsg("Got switch status: "+data.on);
 		// Refresh checkboxes from data unless we were asked to ignore.

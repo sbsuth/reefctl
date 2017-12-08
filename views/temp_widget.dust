@@ -1,6 +1,12 @@
 <!--Embed the registration call in an input with the name register_widget-->
 <input type=hidden class="register_widget" value=dashboard.register_widget("{status_key}","{instr.name}","temp.widgetUpdate","/js/temp.c.js") />
-<button type="button" class="btn btn-default" aria-label="Left Align">
-  <span class="glyphicon glyphicon-cloud" aria-hidden="true"></span>
-  Details
-</button>
+<table>
+<tr class=x_row_emphasize>
+  <td id=ave_temp>Ave: </td><td class="w_10"/>
+  <td><table>
+	<tr class=x_row_small><td id=disp_temp>Disp: </td></tr>
+	<tr class=x_row_small><td id=sump_temp>Sump:</td></tr>
+  </td></table>
+</tr>
+<tr><td><span class="label label-default" id=heater_on>Heater On/Off Unknown</span></td></tr>
+</table>

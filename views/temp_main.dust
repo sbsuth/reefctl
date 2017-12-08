@@ -23,19 +23,24 @@
 				 </div>
 				 <div class="x_content">
 					<div class="row">
-						<div class="col-xs-12">
-							<!-- Column for height prog bar -->
+						<div class="col-xs-6">
 							<table class="x_table" width=100%>
 							<tr class=x_row_emphasize><td class="w_30">Average</td><td id=t_ave>(pending)</td></tr>
 							<tr class=x_row_deemphasize><td>Display</td><td id=t_disp>(pending)</td></tr>
 							<tr class=x_row_deemphasize><td>Sump</td><td id=t_sump>(pending)</td></tr>
 							</table>
 						</div>
+						<div class="col-xs-6">
+							<table class="x_table" width=100%>
+							<tr><td><span class="label label-default" id=heater_on>Heater On/Off Unknown</span></td></tr>
+							<tr class=x_row_deemphasize><td id=t_on_label>Time:</td><td id=t_on>(pending)</td></tr>
+							</table>
+						</div>
 					</div>
 				 </div>
 				</div>
 			</div><!--col-->
-			<!-- Current temp -->
+			<!-- Temp settings -->
 			<div class="col-xs-12 col-sm-6">
 				<div class="x_panel">
 				 <div class="x_title">
@@ -44,14 +49,13 @@
 				 <div class="x_content">
 					<div class="row">
 						<div class="col-xs-12">
-							<!-- Column for height prog bar -->
 							<table class="x_table" width=100%>
 							<tr class=x_row_emphasize>
 								<td class="w_30">Target Temp (&#8457;)</td>
 								<td id=target_temp>
 									<div class="input-group input-group-sm">
 										<input type="text" class="form-control" placeholder="TargetTemp" id=targetTemp>
-										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setTargetTemp"><i class="glyphicon glyphicon-upload"/></button> </span>
+										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setTargetTemp" onclick='temp.setTargetTemp(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
 									</div><!-- /input-group -->
 								</td>
 							</tr>
@@ -60,16 +64,16 @@
 								<td id=sample>
 									<div class="input-group input-group-sm">
 										<input type="text" class="form-control" placeholder="Sample period" id=samplePeriod>
-										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setSamplePeriod"><i class="glyphicon glyphicon-upload"/></button> </span>
+										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setSamplePeriod" onclick='temp.setSamplePeriod(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
 									</div><!-- /input-group -->
 								</td>
 							</tr>
 							<tr class=x_row_deemphasize>
 								<td class="w_30">Sensitivity (&#8457;)</td>
-								<td id=sensitivity>
+								<td id=sens>
 									<div class="input-group input-group-sm">
 										<input type="text" class="form-control" placeholder="Sensitivity" id=sensitivity>
-										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setSensitivity"><i class="glyphicon glyphicon-upload"/></button> </span>
+										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setSensitivity" onclick='temp.setSensitivity(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
 									</div><!-- /input-group -->
 								</td>
 							</tr>
@@ -101,7 +105,7 @@
 		<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
 		 <table><tr>
 			 <td><p/></td>
-			 <td><button type="button" aria-hidden="true" onclick="page.clearError()">&times;</button></td>
+			 <td><button type="button" aria-hidden="true" onclick="temp.clearError()">&times;</button></td>
 		</tr></table>
 		</div>
 	</div>
