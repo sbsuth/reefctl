@@ -1,15 +1,66 @@
 {>"master" /}
 {<title}: Probes{/title}
 {<bodyContent}
-<div class="container">
-
-  <div class="row">
-
-	<div class="col-xs-12">
-	  <div class="jumbotron">
-	  </div>
-	</div><!--/.col-xs-12.col-sm-9-->
-  </div><!--/row-->
-
-</div><!-- /.container -->
+<input type=hidden id=instr_name value={instr_name} />
+<div class="container-fluid outer-container">
+	<div class="container title_row">
+		<table width=100%><tr>
+		<td width=90%><h3>Probes</h3></td>
+		<td> <div class="checkbox checkbox-primary">
+				<input id="monitor_cb" type="checkbox" checked="">
+				<label style="padding: 0px;">Monitor</label>
+			</div>
+		</td>
+		</tr></table>
+	</div><!--container-->
+	<div class="container-fluid">
+		<div class="row">
+			<!-- Current values -->
+			<div class="col-xs-12 col-sm-6">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>Current Values</h2>
+				 </div>
+				 <div class="x_content">
+					<div class="row">
+						<div class="col-xs-12">
+							<table class="x_table" width=100%>
+							<tr class=x_row_emphasize><td>pH</td><td id=cur_ph>(pending)</td></tr>
+							<tr class=x_row_emphasize><td>Specific Gravity</td><td id=cur_sg>(pending)</td></tr>
+							<tr class=x_row_d2emphasize><td>Salinity</td><td id=cur_sal>(pending)</td></tr>
+							<tr class=x_row_d2emphasize><td>Conductivity</td><td id=cur_cond>(pending)</td></tr>
+							<tr class=x_row_d2emphasize><td>TDS</td><td id=cur_tds>(pending)</td></tr>
+							</table>
+						</div>
+					</div>
+				 </div>
+				</div>
+			</div><!--col-->
+			<div class="col-xs-12 col-sm-6">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>Calibration</h2>
+				 </div>
+				 <div class="x_content">
+					<div class="row">
+						{#cal_items}
+							<div class="col-xs-12">
+								{>calibrate /}
+							</div>
+						{/cal_items}
+					</div>
+				 </div>
+				</div>
+			</div><!--col-->
+		</div><!--row-->
+	</div><!--container-->
+	<div class="container" >
+		<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
+		 <table><tr>
+			 <td><p/></td>
+			 <td><button type="button" aria-hidden="true" onclick="temp.clearError()">&times;</button></td>
+		</tr></table>
+		</div>
+	</div>
+</div><!--container-->
 {/bodyContent}

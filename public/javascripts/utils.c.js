@@ -128,20 +128,23 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		var page = this;
 		var inext = iprev + 1;
 
+console.log("HEY: In calStep");
 		if (iprev >= 0) {
 			// Send a step.
 			var url = cal.cmd + "/" + iprev;
 			var cell = cal.cells[iprev];
-			var value = cell.value.val();
-			if (cell.value.is(":visible")) {
-				// If there is a value to be entered, make sure its a number.
-				if (isNaN(value)) {
-					page.showError("Must enter a number",0);
-					cell.value.select();
-					cell.value.focus();
-					return;
+			if (cell.value != undefined) {
+				var value = cell.value.val();
+				if (cell.value.is(":visible")) {
+					// If there is a value to be entered, make sure its a number.
+					if (isNaN(value)) {
+						page.showError("Must enter a number",0);
+						cell.value.select();
+						cell.value.focus();
+						return;
+					}
+					url += "/" + value;
 				}
-				url += "/" + value;
 			}
 			// Send the calibration commens.
 			page.debugMsg("Sending command: \'"+url+"\'");
@@ -158,8 +161,10 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 					// Update status.
 					if (inext == cal.cells.length) {
 						cal.stat.text("Calibration comple!");
-					} else {
+					} else if (cell.value != undefined) {
 						cal.stat.text("Successfully sent calibration value for "+cell.value.attr('placeholder'));
+					} else {
+						cal.stat.text("Successfully sent calibration value");
 					}
 
 					// Update enables for the next step.
@@ -186,6 +191,7 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		if (row == undefined) {
 			return;
 		}
+console.log("HEY: In calStartStop");
 		// Find the elements.
 		var stat = $('#cal_'+id+'_status'); 
 		var cmd = $('#cal_'+id+'_cmd').val(); 
@@ -201,19 +207,20 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 			var cell = $('#cal_'+id+'_step_'+istep+'_cell');
 			var value = $('#cal_'+id+'_step_'+istep+'_value');
 			var send = $('#cal_'+id+'_step_'+istep+'_send');
-			if (!cell.length || !value.length || !send.length) {
+			if (!cell.length || !send.length) {
 				break;
 			}
 			cells.push( {cell: cell, value: value, send: send} );
 			value.val(''); // Clear old value.
 			istep++;
 		}
-
+console.log("HEY: cells.length="+cells.length);
 		if (cells.length == 0) {
 			return;
 		}
 
 		var vis = row.is(":visible");
+console.log("HEY: vis="+vis);
 		if (vis) {
 			return; // Quit.
 		}

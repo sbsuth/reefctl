@@ -139,6 +139,11 @@ var default_instruments = [
 	  label: "Temperature Controller",
 	  address: "10.10.2.7:1000"
 	},
+	{ name: 'probes',
+	  type: 'probes',
+	  label: "pH and EC Probes",
+	  address: "10.10.2.7:1000"
+	},
 ];
 
 // Called from an early filter to initialize the session.

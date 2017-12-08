@@ -18,6 +18,8 @@
 				<div class="input-group input-group-sm">
 					{?has_value}
 					<input type="text" class="form-control" placeholder="{label}" id=cal_{id}_step_{i}_value>
+					{:else}
+					<input type="hidden" placeholder="{label}" id=cal_{id}_step_{i}_value>
 					{/has_value}
 					<span class="input-group-btn"> <button class="btn btn-default" type="button" id="cal_{id}_step_{i}_send"><i class="glyphicon"/></button> </span>
 				</div><!-- /input-group -->

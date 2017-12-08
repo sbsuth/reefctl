@@ -1,1 +1,10 @@
-<p>This is the probes widget</p>
+<!--Embed the registration call in an input with the name register_widget-->
+<input type=hidden class="register_widget" value=dashboard.register_widget("{status_key}","{instr.name}","probes.widgetUpdate","/js/probes.c.js") />
+<table width=100%>
+<tr class=x_row_emphasize>
+  <td class="w_20">pH: </td><td id=cur_ph>(pending)</td>
+</tr>
+<tr class=x_row_emphasize>
+  <td class="w_20">SG: </td><td id=cur_sg>(pending)</td>
+</tr>
+</table>
