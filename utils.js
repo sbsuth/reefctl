@@ -1,3 +1,5 @@
+var request = require('request');
+
 // File-scoped variables.
 var dust = 0;
 var indirect_template_cache = [];
@@ -144,6 +146,11 @@ var default_instruments = [
 	  label: "pH and EC Probes",
 	  address: "10.10.2.7:1000"
 	},
+	{ name: 'powerheads',
+	  type: 'powerheads',
+	  label: "Powerheads",
+	  address: "10.10.2.7:1000"
+	},
 ];
 
 // Called from an early filter to initialize the session.
@@ -251,6 +258,28 @@ function instr_cmd_done( instr )
 	}
 }
 
+// Send a command to an instrument
+// Call either the success or failure functions depending on the result.
+function send_instr_cmd( instr, cmd, successFunc, failureFunc ) 
+{
+	var url = instr.address;
+	request.post(
+			'http://' + url,
+			{ headers: { 'suth-cmd': cmd },
+			  json: true,
+			  timeout: 5000
+			},
+			function (error, response, body) {
+				if (!error && response.statusCode == 200) {
+					successFunc(body);
+				} else {
+					failureFunc(error);
+				}
+				instr_cmd_done( instr );
+			}
+	);
+}
+
 module.exports = {
 	init_dust_helpers: function( dust_in ) {
 		dust = dust_in;
@@ -267,5 +296,6 @@ module.exports = {
 	get_instr_by_name: get_instr_by_name,
 	send_error: send_error,
 	queue_instr_cmd: queue_instr_cmd,
+	send_instr_cmd: send_instr_cmd,
 	instr_cmd_done: instr_cmd_done
 };

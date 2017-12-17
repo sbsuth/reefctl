@@ -42,17 +42,17 @@ power.handleStatus = function( data )
 		if (page.ignore_status > 0) {
 			page.ignore_status--;
 		} else {
+			console.log("data="+JSON.stringify(data));
 			var i;
 			for (i = 0; i < data.on.length; i++ ) {
 				$('#P'+i+" :checkbox").prop('checked', data.on[i]);
 			}
-			page.ignore_status = 0; // In case negative.
+			page.goodUpdate();
 		}
 	} else if (data.error == 429) {
 		page.debugMsg("Too busy for command");
 	} else {
-		page.showError( data.error, data.message );
-		page.setUpdateInterval(0);
+		page.incrementFailedUpdates();
 	}
 	page.waiting_status = 0;
 

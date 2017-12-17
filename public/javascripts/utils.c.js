@@ -4,6 +4,7 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 	this.waiting_status  = 0;
 	this.ignore_status  = 0;
 	this.status_interval  = useInterval;
+	this.num_failed_updates  = 0;
 	if (useInterval > 0) {
 		this.disable_status = false;
 	} else {
@@ -62,6 +63,23 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 			page.debugMsg("disable_status="+page.disable_status);
 		}
 	}
+
+	this.goodUpdate = function() {
+		var page = this;
+		page.ignore_status = 0; // In case negative.
+		page.num_failed_updates = 0;
+	}
+
+	this.incrementFailedUpdates = function() {
+		var page = this;
+		page.num_failed_updates++;
+		if (page.num_failed_updates > 3) {
+			page.debugMsg("Failed on "+page.num_failed_updates+" updates.  Disabling updates");
+			page.num_failed_updates = 0;
+			page.setUpdateInterval(0);
+		}
+	}
+
 	this.setUpdateInterval = function( ms ) {
 		var page = this;
 		if (ms > 0) {
@@ -69,6 +87,7 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		} else {
 			page.disable_status = true;
 		}
+		page.num_failed_updates = 0;
 		var monitor_cb = $( "#monitor_cb:checkbox" );
 		if (monitor_cb != undefined) {
 			monitor_cb.prop('checked', !page.disable_status );
@@ -128,7 +147,6 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		var page = this;
 		var inext = iprev + 1;
 
-console.log("HEY: In calStep");
 		if (iprev >= 0) {
 			// Send a step.
 			var url = cal.cmd + "/" + iprev;
@@ -191,7 +209,6 @@ console.log("HEY: In calStep");
 		if (row == undefined) {
 			return;
 		}
-console.log("HEY: In calStartStop");
 		// Find the elements.
 		var stat = $('#cal_'+id+'_status'); 
 		var cmd = $('#cal_'+id+'_cmd').val(); 
@@ -214,13 +231,11 @@ console.log("HEY: In calStartStop");
 			value.val(''); // Clear old value.
 			istep++;
 		}
-console.log("HEY: cells.length="+cells.length);
 		if (cells.length == 0) {
 			return;
 		}
 
 		var vis = row.is(":visible");
-console.log("HEY: vis="+vis);
 		if (vis) {
 			return; // Quit.
 		}

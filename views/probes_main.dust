@@ -58,7 +58,7 @@
 		<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
 		 <table><tr>
 			 <td><p/></td>
-			 <td><button type="button" aria-hidden="true" onclick="temp.clearError()">&times;</button></td>
+			 <td><button type="button" aria-hidden="true" onclick="probes.clearError()">&times;</button></td>
 		</tr></table>
 		</div>
 	</div>

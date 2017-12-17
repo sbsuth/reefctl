@@ -33,12 +33,12 @@ fixture.handleStatus = function ( data ) {
 		h_entry.val(data.height);
 		h_cur.text(data.height+"%");
 		page.setUpdateInterval(data.moving ? 200 : 2000);
+		page.goodUpdate();
 	} else if (data.error == 429) {
 		page.debugMsg("Too busy for fixture_height");
 		page.setUpdateInterval(2000);
 	} else {
-		page.showError( data.error, data.message );
-		page.setUpdateInterval(0);
+		page.incrementFailedUpdates();
 	}
 	page.waiting_status = 0;
 

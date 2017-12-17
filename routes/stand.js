@@ -1,58 +1,52 @@
 var express = require('express');
 var router = express.Router();
-var request = require('request');
 
 var debug_stand = 1;
 
 /*
  * POST a command to the stand.
  */
-router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?', function(req, res) {
+router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?/:arg4?', function(req, res) {
 
 	var utils = req.utils;
     var cmd = req.params.cmd
 				+ ((req.params.arg1 != undefined) ? " "+req.params.arg1 : "")
 				+ ((req.params.arg2 != undefined) ? " "+req.params.arg2 : "")
 				+ ((req.params.arg3 != undefined) ? " "+req.params.arg3 : "")
+				+ ((req.params.arg4 != undefined) ? " "+req.params.arg4 : "")
 	var instr_name = req.params.instr_name;
 	var instr = utils.get_instr_by_name(req,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "stand \'"+instr_name+"\' unknown.");
 		return;
 	}
-	var url = instr.address;
 	if (debug_stand) {
 		console.log("STAND: Incoming command: "+cmd);
 	}
+
 	utils.queue_instr_cmd( instr, function () {
 		if (debug_stand) {
 			console.log("STAND: Sending "+cmd+" command from server");
 		}
-		request.post(
-				'http://' + url,
-				{ headers: { 'suth-cmd': cmd },
-				  json: true,
-				  timeout: 5000
-				},
-				function (error, response, body) {
-					if (!error && response.statusCode == 200) {
-						if (debug_stand) {
-							console.log("STAND: Got "+cmd+" response in server:"+JSON.stringify(response.body));
-						}
-						res.send( { msg: '', body: body } );
-					} else {
-						utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name);
-					}
-					utils.instr_cmd_done( instr );
+		utils.send_instr_cmd( instr, cmd,
+			function(body) { // Success
+				if (debug_stand) {
+					console.log("STAND: Got "+cmd+" response in server:"+JSON.stringify(body));
 				}
+				res.send( { msg: '', body: body } );
+			},
+			function(error) { // Error
+				utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+			}
 		);
 	});
+
 });
 
 //
 // GET stand_status query.
 //
-router.get('/stand_status/:instr_name', function(req, res) {
+router.get('/stand_status/:instr_name/:option?', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
 	var instr = utils.get_instr_by_name(req,instr_name);
@@ -60,8 +54,7 @@ router.get('/stand_status/:instr_name', function(req, res) {
 		utils.send_error( res, "ERROR: stand instrument \'"+instr_name+"\' unknown.");
 		return;
 	}
-	var url = instr.address;
-	var cmd = "stat";
+	var cmd = (req.params.option=="pump") ? "pstat" : "stat";
 
 	if (debug_stand) {
 		console.log("STAND: Incoming stand status");
@@ -70,22 +63,15 @@ router.get('/stand_status/:instr_name', function(req, res) {
 		if (debug_stand) {
 			console.log("STAND: Sending "+cmd+" command from server");
 		}
-		request.get(
-			'http://' + url,
-			{ headers: { 'suth-cmd': cmd },
-			  json: true,
-			  timeout: 5000
-			},
-			function (error, response, body) {
-				if (!error && response.statusCode == 200) {
-					if (debug_stand) {
-						console.log("STAND: Got "+cmd+" response in server");
-					}
-					res.json( body );
-				} else {
-					utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name);
+		utils.send_instr_cmd( instr, cmd,
+			function(body) { // Success
+				if (debug_stand) {
+					console.log("STAND: Got "+cmd+" response in server:"+JSON.stringify(body));
 				}
-				utils.instr_cmd_done( instr );
+				res.send( body );
+			},
+			function(error) { // Error
+				utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
 			}
 		);
 	}, res); // Sending res says "Don't do this if there's something already queued."
@@ -179,6 +165,33 @@ router.get('/probes_main/:instr_name', function(req, res) {
 	res.render("probes_main", d );
 });
 
+/*
+ * GET powerheads_main.
+ */
+router.get('/powerheads_main/:instr_name', function(req, res) {
+	var utils = req.utils;
+	var instr_name = req.params.instr_name;
+	var instr = utils.get_instr_by_name(req,instr_name);
+	if (instr === undefined) {
+		utils.send_error( res, "powerheads instrument \'"+instr_name+"\' unknown.");
+		return;
+	}
+	var d = utils.get_master_template_data(req);
+	d.load_javascript.push( "/js/powerheads.c.js" );
+	d.instr_name = instr_name;
+	var settings = [{i: 0, id: "mode",        kind: "mode_combo",func: "set_mode", label: "Mode"},
+					{i: 1, id: "top_speed",   kind: "edit", func: "set_speed", label: "Top Speed (%)"},
+					{i: 2, id: "slow_speed",  kind: "edit", func: "set_speed", label: "Slow Speed (%)"},
+	                {i: 3, id: "hold_sec",    kind: "edit", func: "set_mode", label: "Hold (sec)"},
+	                {i: 4, id: "hold_range",  kind: "edit", func: "set_mode", label: "Hold Range(%)"},
+	                {i: 5, id: "ramp_sec",    kind: "edit", func: "set_mode", label: "Ramp (sec)"},
+	                {i: 6, id: "ramp_range",  kind: "edit", func: "set_mode", label: "Ramp Range(%)"}
+				   ];
+	d.indexes = [{index: 0, settings: settings},{index: 1, settings: settings}];
+	res.locals.session = req.session;
+	res.render("powerheads_main", d );
+});
+
 function init_session( session )
 {
 }
@@ -208,6 +221,15 @@ module.exports = {
 		widget_page: "probes_widget",
 		status_cmd: "stat",
 		status_route: "stand_status",
+		init_session: init_session,
+		init_widget_data: init_widget_data
+	  },
+	  { name: "powerheads",
+		label: "Powerheads",
+		main_page: "powerheads_main",
+		widget_page: "powerheads_widget",
+		status_cmd: "pstat",
+		status_route: "stand_status/pump",
 		init_session: init_session,
 		init_widget_data: init_widget_data
 	  }

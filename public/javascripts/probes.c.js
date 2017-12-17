@@ -23,6 +23,7 @@ probes.handleStatus = function ( data ) {
 
 	if (data.error === undefined) {
 		page.debugMsg("Got stand status: "+JSON.stringify(data));
+		page.clearError();
 		
 		var pH = (data.pH==undefined) ? 0.0 : data.pH;
 		var EC = (data.EC==undefined) ? 0.0 : data.EC;
@@ -35,12 +36,12 @@ probes.handleStatus = function ( data ) {
 		$('#cur_cond').text(EC.toFixed(1));
 		$('#cur_tds').text(TDS.toFixed(1));
 
+		page.goodUpdate();
 	} else if (data.error == 429) {
 		page.debugMsg("Too busy for stand_stat");
 		page.setUpdateInterval(2000);
 	} else {
-		page.showError( data.error, data.message );
-		page.setUpdateInterval(0);
+		page.incrementFailedUpdates();
 	}
 	page.waiting_status = 0;
 
@@ -73,6 +74,7 @@ probes.sendCmd = function (event,cmd,arg,successFunc) {
 		// Check for a successful (blank) response
 		if (response.msg === '') {
 			page.debugMsg("Back from stand cmd: "+cmd);
+			page.clearError();
 			page.updateStatus();
 			if (successFunc != undefined) {
 				successFunc();

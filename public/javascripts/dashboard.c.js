@@ -14,7 +14,6 @@ dashboard.icur = 0;
 // update funcs round-robbin.  The route in the key is used to get the status.
 dashboard.register_widget = function ( full_key, instr_name, update_func_name, js, css) {
 
-console.log("In register_widget("+full_key+","+instr_name);
 	// We use the address and 
 	var key_tokens = full_key.split(';');
 	var status_key = key_tokens[0] + ";" + key_tokens[1];
@@ -72,8 +71,13 @@ dashboard.updateStatus = function()
 	if (dashboard.icur >= dashboard.widgets.length)
 		dashboard.icur = 0;
 
-	page.debugMsg("Sending stat cmd: "+'/'+item.route+'/'+item.instr_name);
-	$.getJSON( '/'+item.route+'/'+item.instr_name, function( data ) { page.handleStatus( item, data ) } );
+	var route_tokens = item.route.split('/');
+	var url = "/"+route_tokens[0]+"/"+item.instr_name;
+	for (var i=1; i < route_tokens.length; i++ ) {
+		url += "/"+route_tokens[i];
+	}
+	page.debugMsg("Sending stat cmd: "+url);
+	$.getJSON( url, function( data ) { page.handleStatus( item, data ) } );
 }
 
 dashboard.handleStatus = function(item, data) {
@@ -88,11 +92,11 @@ dashboard.handleStatus = function(item, data) {
 			var cmd = update_func + "(\"" + item.instr_name + "\"," + JSON.stringify(data) + ")";
 			eval( cmd );
 		});
+		page.goodUpdate();
 	} else if (data.error == 429) {
 		page.debugMsg(dashboard.debug_prefix+": Too busy for command");
 	} else {
-		page.showError( data.error, data.message );
-		page.setUpdateInterval(0);
+		page.incrementFailedUpdates();
 	}
 	page.waiting_status = 0;
 

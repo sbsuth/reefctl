@@ -2,7 +2,7 @@
 <input type=hidden class="register_widget" value=dashboard.register_widget("{status_key}","{instr.name}","temp.widgetUpdate","/js/temp.c.js") />
 <table>
 <tr class=x_row_emphasize>
-  <td id=ave_temp>Ave: </td><td class="w_10"/>
+  <td class="w_20" id=ave_temp>Ave: </td><td class="w_10"/>
   <td><table>
 	<tr class=x_row_small><td id=disp_temp>Disp: </td></tr>
 	<tr class=x_row_small><td id=sump_temp>Sump:</td></tr>

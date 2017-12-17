@@ -80,12 +80,12 @@ temp.handleStatus = function ( data ) {
 		ton_label.text("Time "+suff+":");
 		ton.text( page.StoHMS(data.theat/1000) );
 
+		page.goodUpdate();
 	} else if (data.error == 429) {
 		page.debugMsg("Too busy for stand_stat");
 		page.setUpdateInterval(2000);
 	} else {
-		page.showError( data.error, data.message );
-		page.setUpdateInterval(0);
+		page.incrementFailedUpdates();
 	}
 	page.waiting_status = 0;
 
