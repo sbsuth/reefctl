@@ -12,6 +12,7 @@ pids
 logs
 results
 build
+diffs
 
 node_modules
 
