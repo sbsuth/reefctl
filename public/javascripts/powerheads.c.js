@@ -1,5 +1,5 @@
 
-var powerheads = new PageUtils( 1, "POWERHEADS", 2000 );
+var powerheads = new PageUtils( 1, "POWERHEADS", 2000, 20000, 0 );
 
 
 // Begins a periodic query for powerhead status.

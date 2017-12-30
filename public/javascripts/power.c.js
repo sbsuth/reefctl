@@ -1,5 +1,5 @@
 
-var power = new PageUtils( 1, "POWER", 3000 );
+var power = new PageUtils( 1, "POWER", 3000, 30000, 0 );
 
 // Begins a periodic query for fixture status.
 // Required signature.
@@ -86,7 +86,7 @@ power.sendCmd = function(event,cmd,unit) {
 		}
 		else {
 			page.showError( 0, response.msg );
-			page.setUpdateInterval(0);
+			page.disableStatusUpdates();
 		}
 	});
 }
