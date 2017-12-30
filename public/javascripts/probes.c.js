@@ -1,5 +1,5 @@
 
-var probes = new PageUtils( 1, "PROBES", 5000 );
+var probes = new PageUtils( 1, "PROBES", 5000, 60000 );
 
 
 // Begins a periodic query for probes status.

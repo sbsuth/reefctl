@@ -1,4 +1,4 @@
-var dashboard = new PageUtils( 1, "DASHBOARD", 3000 );
+var dashboard = new PageUtils( 1, "DASHBOARD", 3000, 10000, 60000 );
 
 dashboard.widgets_by_key = [];
 dashboard.widgets = [];

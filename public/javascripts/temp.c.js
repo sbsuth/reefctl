@@ -1,5 +1,5 @@
 
-var temp = new PageUtils( 1, "TEMP", 5000 );
+var temp = new PageUtils( 1, "TEMP", 5000, 60000 );
 
 
 // Begins a periodic query for temp status.
