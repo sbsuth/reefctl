@@ -66,7 +66,7 @@ router.get('/power_status/:instr_name', function(req, res) {
 		utils.send_instr_cmd( instr, cmd,
 			function(body) { // Success
 				if (debug_power) {
-					console.log("POWER: Got "+cmd+" response in server");
+					console.log("POWER: Got "+cmd+" response in server: '"+body+"'");
 				}
 				res.send( body );
 			},
