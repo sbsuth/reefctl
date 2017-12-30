@@ -1,9 +1,12 @@
-function PageUtils ( useDebug, usePrefix, useInterval ) {
+function PageUtils ( useDebug, usePrefix, useInterval, slowInterval, idleInterval ) {
 	this.debug = useDebug;
 	this.debug_prefix = usePrefix;
 	this.waiting_status  = 0;
 	this.ignore_status  = 0;
 	this.status_interval  = useInterval;
+	this.slow_interval  = (slowInterval == undefined) ? useInterval : slowInterval;
+	this.idle_interval  = (idleInterval == undefined) ? useInterval : idleInterval;
+	this.last_update_restart = 0;
 	this.num_failed_updates  = 0;
 	if (useInterval > 0) {
 		this.disable_status = false;
@@ -53,6 +56,7 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		var page = event.data.page;
 		var monitor_cb = $( "#monitor_cb:checkbox" );
 		if (monitor_cb != undefined) {
+			page.last_update_restart = new Date().getTime();
 			var checked = monitor_cb.is(":checked");
 			if (checked) {
 				page.disable_status = false;
@@ -76,21 +80,34 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		if (page.num_failed_updates > 3) {
 			page.debugMsg("Failed on "+page.num_failed_updates+" updates.  Disabling updates");
 			page.num_failed_updates = 0;
-			page.setUpdateInterval(0);
+			page.disableStatusUpdates();
 		}
 	}
 
+	// Sets the initial status rate, and resets the timer.
+	// Disables if 0.
 	this.setUpdateInterval = function( ms ) {
-		var page = this;
+ 		var page = this;
 		if (ms > 0) {
 			page.update_interval = ms;
 		} else {
 			page.disable_status = true;
 		}
+ 		page.num_failed_updates = 0;
+ 		var monitor_cb = $( "#monitor_cb:checkbox" );
+ 		if (monitor_cb != undefined) {
+			monitor_cb.prop('checked', !page.disable_status );
+ 		}
+		page.last_update_restart = new Date().getTime();
+ 	}
+
+	this.disableStatusUpdates = function() {
+		var page = this;
+		page.disable_status = true;
 		page.num_failed_updates = 0;
 		var monitor_cb = $( "#monitor_cb:checkbox" );
 		if (monitor_cb != undefined) {
-			monitor_cb.prop('checked', !page.disable_status );
+			monitor_cb.prop('checked', false );
 		}
 	}
 	this.scheduleStatusUpdate = function() {
@@ -99,7 +116,20 @@ function PageUtils ( useDebug, usePrefix, useInterval ) {
 		if (page.disable_status || (page.status_interval <= 0)) {
 			return;
 		}
-		setTimeout( function() { page.updateStatus() }, page.status_interval );
+		// get time since start of status update, and choose update speed accordingly.
+		var now = new Date().getTime();
+		var delta = (now - page.last_update_restart);
+		var interval = page.status_interval;
+		if (delta > (5 * 60000)) {
+			interval = page.idle_interval;
+		} else if (delta > (1 * 60000)) {
+			interval = page.slow_interval;
+		}
+		if (interval > 0) {
+			setTimeout( function() { page.updateStatus() }, interval );
+		} else {
+			page.disableStatusUpdates();
+		}
 	}
 	
 	// Enable/disable calibration elements.
