@@ -1,4 +1,5 @@
 var request = require('request');
+var net = require('net');
 
 // File-scoped variables.
 var dust = 0;
@@ -197,11 +198,23 @@ function send_error( res, msg )
     });
 }
 
+function json_resp_header() {
+	var header = "HTTP/1.1 200 OK\r\n";
+	header += "Content-Type: application/jsonrequest\r\n";
+	header += "Content-Length: ";
+	return header;
+}
+
+function http_wrap (msg) {
+	var jmsg = json_resp_header() + msg.length + "\r\n\r\n" + msg;
+	return jmsg;
+}
+
 // Persistent array of queues.
 // Indexed by URL.
 // Each queue is an array of functions.
 var instr_cmd_queue = [];
-var debug_queue = 1;
+var debug_queue = 2;
 
 function queue_instr_cmd( instr, func, res )
 {
@@ -258,9 +271,7 @@ function instr_cmd_done( instr )
 	}
 }
 
-// Send a command to an instrument
-// Call either the success or failure functions depending on the result.
-function send_instr_cmd( instr, cmd, successFunc, failureFunc ) 
+function send_instr_cmd_http( instr, cmd, successFunc, failureFunc ) 
 {
 	var url = instr.address;
 	request.post(
@@ -280,6 +291,119 @@ function send_instr_cmd( instr, cmd, successFunc, failureFunc )
 	);
 }
 
+// Parses a reply from an instrument.
+// Copies non-header strings into the result field.
+// Returns true if it is "complete" which is either when
+// a content length has been read, and that many bytes have
+// been read after the header.
+function parse_reply( state, str ) 
+{
+	// We make assumptions based on what we know the instruments
+	// may return:
+	//  - May or may not have an HTTP header.
+	//  - Content length is either Content-Length: or CL:.
+	//  - A blank line \r\n follows the Content-Length field.
+	//  - Payload is expeceted to be JSON, and is parsed.
+	var complete = false;
+	var pos = 0;
+	while (pos < str.length) {
+		// Add everything up to the next \n to the accumulated result.
+		var eol = str.indexOf('\n',pos);
+		state.result += str.substr( pos, (eol>=0) ? eol : undefined );
+
+		if (eol >= 0) { 
+			// Complete header line. Decode content or ignore.
+			var clTag = ['Content-Length: ', 'CL: '];
+			for ( var i=0; i < 2; i++ ) {
+				var len = clTag[i].length;
+				if (state.result.substring( 0, len ) == clTag[i]) {
+					state.content_len = parseInt( state.result.substring(len) );
+					break;
+				}
+			}
+			state.result = "";
+			pos = eol + 1;
+		} else {
+			if (   (state.content_len >= 0) 
+				&& (state.result.length >= state.content_len)) {
+				// Complete payload.
+				complete = true;
+			}
+			pos = str.length;
+		}
+	}
+	return complete;
+}
+
+// send a command to an instrument directly as a TCP client.
+// call either the success or failure functions depending on the result.
+function send_instr_cmd( instr, cmd, successfunc, failurefunc ) 
+{
+	var addr = instr.address;
+	var url = addr.split(':');
+	var client = new net.Socket();
+	var success = false;
+	var result = "";
+	var state = {nread: 0, content_len: -1, result: ""};
+
+	client.setTimeout(3000, function() {
+		if (debug_queue) {
+			console.log("QUEUE: Timeout sending command '"+cmd+"'");
+		}
+		state.result = "Timeout sending command '"+cmd+"'";
+		success = false;
+		client.end();
+	});
+
+	client.connect( url[1], url[0], function() {
+		if (debug_queue > 1) {
+			console.log("QUEUE: Client connected. Sending command.");
+		}
+		client.write(cmd+"\n");
+	});
+
+	client.on('data', function(data) {
+		if (debug_queue) {
+			console.log("QUEUE: Got result from cmd '"+cmd+"': "+data.toString());
+		}
+		if (parse_reply( state, data.toString() )) {
+			client.end();
+		}
+		success = true;
+
+	});
+	client.on('error', function(err) {
+		state.result = err;
+		if (debug_queue) {
+			console.log("QUEUE: Got error from cmd '"+cmd+"': "+state.result);
+		}
+		success = false;
+		client.end();
+	});
+
+	client.on('close', function() {
+		if (debug_queue > 1) {
+			console.log("QUEUE: Connection closed for "+cmd+"', success="+success);
+		}
+		if (success) {
+			try {
+				if (state.result != "") {
+					result = JSON.parse(state.result);
+				} else {
+					result = new Object;
+				}
+				successfunc( result );
+			} catch (err) {
+				failurefunc(err);
+			}
+		} else {
+			failurefunc( state.result );
+		}
+		instr_cmd_done( instr );
+		client.end();
+	});
+}
+
 module.exports = {
 	init_dust_helpers: function( dust_in ) {
 		dust = dust_in;
@@ -296,6 +420,7 @@ module.exports = {
 	get_instr_by_name: get_instr_by_name,
 	send_error: send_error,
 	queue_instr_cmd: queue_instr_cmd,
+	send_instr_cmd_http: send_instr_cmd_http,
 	send_instr_cmd: send_instr_cmd,
 	instr_cmd_done: instr_cmd_done
 };
