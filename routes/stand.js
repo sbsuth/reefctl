@@ -133,7 +133,7 @@ router.get('/probes_main/:instr_name', function(req, res) {
 		utils.send_error( res, "probes instrument \'"+instr_name+"\' unknown.");
 		return;
 	}
-	var calHelp = "Place probe in \'_label_\' and click to send";
+	var calHelp = "Place probe in \'_label_\', wait for reading to settle, and click to send";
 	var d = utils.get_master_template_data(req);
 	d.load_javascript.push( "/js/probes.c.js" );
 	d.instr_name = instr_name;
@@ -155,9 +155,9 @@ router.get('/probes_main/:instr_name', function(req, res) {
 					 has_value: false,
 					 steps: [
 						{ help: calHelp }, 
-						{ i: 0, label: "Low", units: ""},
-						{ i: 1, label: "Mid", units: ""},
-						{ i: 2, label: "High", units: ""}
+						{ i: 0, label: "Dry", units: ""},
+						{ i: 1, label: "12880", units: ""},
+						{ i: 2, label: "80000", units: ""}
 					 ]
 					}
 				 ];
