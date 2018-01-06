@@ -5,11 +5,15 @@
 #include <RF24Mesh/RF24Mesh.h>  
 #include <RF24Gateway/RF24Gateway.h>
 
+#define USE_INTERRUPTS 1
+
 //RF24 radio(RPI_V2_GPIO_P1_15, BCM2835_SPI_CS0, BCM2835_SPI_SPEED_8MHZ); 
 RF24 radio(22,0);
 RF24Network network(radio);
 RF24Mesh mesh(radio,network);
 RF24Gateway gw(radio,network,mesh);
+
+uint32_t mesh_timer = 0;
 
 void intHandler(){
     
@@ -53,7 +57,9 @@ int main(int argc, char** argv) {
   
  while(1){
     
-    gw.update();
+#if !USE_INTERRUPTS
+	gw.update();
+#endif
 	// The gateway handles all IP traffic (marked as EXTERNAL_DATA_TYPE) and passes it to the associated network interface
 	// RF24Network user payloads are loaded into the user cache
 	if( network.available() ){
@@ -63,6 +69,21 @@ int main(int argc, char** argv) {
 	    network.read(header,&buf,size);
 	  printf("Received Network Message, type: %d id %d from %d\n",header.type,header.id,mesh.getNodeID(header.from_node));
 	}
+#if USE_INTERRUPTS
+   //When using interrupts, gw.poll(); needs to be called to handle incoming data from the network interface.
+   //The function will perform a delayed wait of max 3ms unless otherwise specified.
+   gw.poll(3);
+#endif
+   
+  if(millis()-mesh_timer > 30000 && mesh.getNodeID()){ //Every 30 seconds, test mesh connectivity
+    mesh_timer = millis();
+    if( ! mesh.checkConnection() ){
+        //refresh the network address
+        radio.maskIRQ(1,1,1); //Use polling only for address renewal       
+        mesh.renewAddress();
+        radio.maskIRQ(1,1,0);
+     }
+  }    
    
 
   }
