@@ -40,13 +40,17 @@ clean:
 	rm -rf $(PROGRAMS)
 
 run:
-	sudo ./RF24GatewayNode &
+	ulimit -c unlimited; \
+	sudo ./RF24GatewayNode 2>&1 | tee gw.log 
+
+run_valgrind:
+	sudo valgrind ./RF24GatewayNode 2>&1 > valgrind.out &
 
 ps:
 	ps -auxw | grep RF24 | grep sudo | grep -v grep
 
 kill :
-	sudo kill `ps -auxw | grep RF24 | grep sudo | grep -v grep | cut -c 11-15`
+	sudo kill `ps -auxw | grep RF24 | grep sudo | grep -v grep | cut -c 10-15`
 
 install: all
 	test -d $(prefix) || mkdir $(prefix)
@@ -54,5 +58,23 @@ install: all
 	for prog in $(PROGRAMS); do \
 	  install -m 0755 $$prog $(prefix)/bin; \
 	done
+
+reload:
+	sudo systemctl daemon-reload
+
+start:
+	sudo systemctl start gwNode
+
+stop:
+	sudo systemctl stop gwNode
+
+restart:
+	sudo systemctl restart gwNode
+
+status:
+	sudo systemctl status gwNode
+
+log:
+	sudo journalctl -u gwNode
 
 .PHONY: install
