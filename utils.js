@@ -102,11 +102,22 @@ function get_instr_mod( kind )
 	}
 }
 
-function get_instr_by_name( req, instr_name )
+// Gets the first instrument of the given type
+function get_instr_by_type( instrs, type ) 
+{
+	for ( var i=0; i < instrs.length; i++ ) {
+		if (instrs[i].type == type)
+			return instrs[i];
+	}
+	return undefined;
+}
+
+
+function get_instr_by_name( instrs, instr_name )
 {
 	var i;
-	for ( i=0; i < req.session.instruments.length; i++ ) {
-		var instr = req.session.instruments[i];
+	for ( i=0; i < instrs.length; i++ ) {
+		var instr = instrs[i];
 		if (instr.name === instr_name) {
 			return instr;
 		}
@@ -151,6 +162,16 @@ var default_instruments = [
 	  type: 'powerheads',
 	  label: "Powerheads",
 	  address: "10.10.2.7:1000"
+	},
+	{ name: 'sump',
+	  type: 'sump_level',
+	  label: "Sump Level",
+	  address: "10.10.2.7:1000"
+	},
+	{ name: 'ro_res',
+	  type: 'ro_res',
+	  label: "RO Reservoir",
+	  address: "10.10.2.6:1000"
 	},
 ];
 
@@ -344,7 +365,7 @@ function send_instr_cmd( instr, cmd, successfunc, failurefunc )
 	var client = new net.Socket();
 	var success = false;
 	var result = "";
-	var state = {nread: 0, content_len: -1, result: ""};
+	var state = {nread: 0, content_len: -1, result: "", connected: false};
 
 	client.setTimeout(3000, function() {
 		if (debug_queue) {
@@ -352,6 +373,10 @@ function send_instr_cmd( instr, cmd, successfunc, failurefunc )
 		}
 		state.result = "Timeout sending command '"+cmd+"'";
 		success = false;
+		if (!client.connected) {
+			failurefunc( state.result );
+			instr_cmd_done( instr );
+		}
 		client.end();
 	});
 
@@ -359,6 +384,7 @@ function send_instr_cmd( instr, cmd, successfunc, failurefunc )
 		if (debug_queue > 1) {
 			console.log("QUEUE: Client connected. Sending command.");
 		}
+		state.connected = true;
 		client.write(cmd+"\n");
 	});
 
@@ -394,14 +420,22 @@ function send_instr_cmd( instr, cmd, successfunc, failurefunc )
 				}
 				successfunc( result );
 			} catch (err) {
+				console.log("ERROR: Caught while processing error results from \'"+cmd+"\': "+err);
 				failurefunc(err);
 			}
 		} else {
 			failurefunc( state.result );
 		}
 		instr_cmd_done( instr );
+		client.connected = false;
 		client.end();
 	});
+}
+
+function queue_and_send_instr_cmd( instr, cmd, successfunc, failurefunc, res )  {
+	queue_instr_cmd( instr, function() {
+		send_instr_cmd( instr, cmd, successfunc, failurefunc );
+	}, res );
 }
 
 module.exports = {
@@ -413,6 +447,7 @@ module.exports = {
 	load_instr_mods: load_instr_mods,
 	get_instr_mod: get_instr_mod,
 	get_instr_info: get_instr_info,
+	get_instr_by_type: get_instr_by_type,
 	save_instr_info: save_instr_info,
 	setup_instr_routes: setup_instr_routes,
 	init_session: init_session,
@@ -420,7 +455,9 @@ module.exports = {
 	get_instr_by_name: get_instr_by_name,
 	send_error: send_error,
 	queue_instr_cmd: queue_instr_cmd,
+	queue_and_send_instr_cmd: queue_and_send_instr_cmd,
 	send_instr_cmd_http: send_instr_cmd_http,
 	send_instr_cmd: send_instr_cmd,
-	instr_cmd_done: instr_cmd_done
+	instr_cmd_done: instr_cmd_done,
+	default_instruments: default_instruments
 };
