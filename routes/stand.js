@@ -15,7 +15,7 @@ router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?/:arg4?', function(
 				+ ((req.params.arg3 != undefined) ? " "+req.params.arg3 : "")
 				+ ((req.params.arg4 != undefined) ? " "+req.params.arg4 : "")
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req,instr_name);
+	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "stand \'"+instr_name+"\' unknown.");
 		return;
@@ -49,7 +49,7 @@ router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?/:arg4?', function(
 router.get('/stand_status/:instr_name/:option?', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req,instr_name);
+	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "ERROR: stand instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -85,7 +85,7 @@ router.get('/stand_status/:instr_name/:option?', function(req, res) {
 router.get('/temp_main/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req,instr_name);
+	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "temp control instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -128,7 +128,7 @@ router.get('/temp_main/:instr_name', function(req, res) {
 router.get('/probes_main/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req,instr_name);
+	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "probes instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -171,7 +171,7 @@ router.get('/probes_main/:instr_name', function(req, res) {
 router.get('/powerheads_main/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req,instr_name);
+	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "powerheads instrument \'"+instr_name+"\' unknown.");
 		return;
