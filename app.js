@@ -28,6 +28,9 @@ var utils = require("./utils");
 utils.init_dust_helpers( dust );
 utils.load_instr_mods();
 
+var monitors = require("./monitors");
+monitors.startup( utils );
+
 
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
@@ -60,10 +63,7 @@ app.use(function(req,res,next){
     req.db = db;
 	req.dust = dust;
 	req.utils = utils;
-	//req.urls = urls;
-
-	//var session = {};
-	//req.session = session;
+	req.monitors = monitors;
 	utils.init_session(req);
 
     next();
