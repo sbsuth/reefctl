@@ -3,12 +3,12 @@ var router = express.Router();
 var request = require('request');
 
 
-function init_session( session )
+function init_session( req )
 {
 }
 
 // Add fields to 'widget' for the given instr to support the widget just template.
-function init_widget_data( session, instr, widget )
+function init_widget_data( req, instr, widget )
 {
 }
 

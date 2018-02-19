@@ -12,7 +12,7 @@ router.post('/power_cmd/:cmd/:instr_name/:unit', function(req, res) {
     var cmd = req.params.cmd;
 	var instr_name = req.params.instr_name;
 	var unit = req.params.unit;
-	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
+	var instr = utils.get_instr_by_name(req.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "power panel \'"+instr_name+"\' unknown.");
 		return;
@@ -48,7 +48,7 @@ router.post('/power_cmd/:cmd/:instr_name/:unit', function(req, res) {
 router.get('/power_status/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
+	var instr = utils.get_instr_by_name(req.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "ERROR: power panel \'"+instr_name+"\' unknown.");
 		return;
@@ -85,7 +85,7 @@ router.get('/power_status/:instr_name', function(req, res) {
 router.get('/power_main/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
+	var instr = utils.get_instr_by_name(req.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "power panel \'"+instr_name+"\' unknown.");
 		return;
@@ -104,12 +104,12 @@ router.get('/power_main/:instr_name', function(req, res) {
 });
 
 
-function init_session( session )
+function init_session( req )
 {
 }
 
 // Add fields to 'widget' for the given instr to support the widget just template.
-function init_widget_data( session, instr, widget )
+function init_widget_data( req, instr, widget )
 {
 }
 

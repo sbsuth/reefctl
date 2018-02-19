@@ -28,10 +28,6 @@ var utils = require("./utils");
 utils.init_dust_helpers( dust );
 utils.load_instr_mods();
 
-var monitors = require("./monitors");
-monitors.startup( utils );
-
-
 // uncomment after placing your favicon in /public
 //app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
@@ -75,6 +71,10 @@ app.use('/test', test);
 app.use('/', dashboard.router);
 
 utils.setup_instr_routes( app );
+
+var monitors = require("./monitors");
+monitors.startup( utils );
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

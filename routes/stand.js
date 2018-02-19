@@ -15,7 +15,7 @@ router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?/:arg4?', function(
 				+ ((req.params.arg3 != undefined) ? " "+req.params.arg3 : "")
 				+ ((req.params.arg4 != undefined) ? " "+req.params.arg4 : "")
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
+	var instr = utils.get_instr_by_name(req.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "stand \'"+instr_name+"\' unknown.");
 		return;
@@ -49,7 +49,7 @@ router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?/:arg4?', function(
 router.get('/stand_status/:instr_name/:option?', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
+	var instr = utils.get_instr_by_name(req.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "ERROR: stand instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -85,7 +85,7 @@ router.get('/stand_status/:instr_name/:option?', function(req, res) {
 router.get('/temp_main/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
+	var instr = utils.get_instr_by_name(req.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "temp control instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -128,7 +128,7 @@ router.get('/temp_main/:instr_name', function(req, res) {
 router.get('/probes_main/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
+	var instr = utils.get_instr_by_name(req.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "probes instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -171,7 +171,7 @@ router.get('/probes_main/:instr_name', function(req, res) {
 router.get('/powerheads_main/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.session.instruments,instr_name);
+	var instr = utils.get_instr_by_name(req.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "powerheads instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -192,12 +192,12 @@ router.get('/powerheads_main/:instr_name', function(req, res) {
 	res.render("powerheads_main", d );
 });
 
-function init_session( session )
+function init_session( req )
 {
 }
 
 // Add fields to 'widget' for the given instr to support the widget just template.
-function init_widget_data( session, instr, widget )
+function init_widget_data( req, instr, widget )
 {
 }
 
@@ -232,6 +232,33 @@ module.exports = {
 		status_route: "stand_status/pump",
 		init_session: init_session,
 		init_widget_data: init_widget_data
-	  }
+	  },
+	  { name: "sump_level",
+		label: "Sump Level",
+		main_page: undefined,
+		widget_page: undefined,
+		status_cmd: "stat",
+		status_route: "stand_status",
+		init_session: init_session,
+		init_widget_data: init_widget_data
+	  },
+	  { name: "ro_res", // Bogus!  Needs to go in an ro_res route
+		label: "RO Reservoir",
+		main_page: undefined,
+		widget_page: undefined,
+		status_cmd: "stat",
+		status_route: "stand_status",
+		init_session: init_session,
+		init_widget_data: init_widget_data
+	  },
+	  { name: "salt_res", // Bogus!  Needs to go in an salt_res route
+		label: "Saltwater Reservoir",
+		main_page: undefined,
+		widget_page: undefined,
+		status_cmd: "stat",
+		status_route: "stand_status",
+		init_session: init_session,
+		init_widget_data: init_widget_data
+	  },
 	]
 };

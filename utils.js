@@ -173,6 +173,11 @@ var default_instruments = [
 	  label: "RO Reservoir",
 	  address: "10.10.2.6:1000"
 	},
+	{ name: 'salt_res',
+	  type: 'salt_res',
+	  label: "Saltwater Reservoir",
+	  address: "10.10.2.8:1000"
+	},
 ];
 
 // Called from an early filter to initialize the session.
@@ -183,21 +188,21 @@ var default_instruments = [
 function init_session( req )
 {
 	var session = req.session;
-	if (session.instruments != undefined) {
-		return
+	if (session.user == undefined) {
+		session.user = "sbsuth"; // HARD CODED!
+		session.system_index = 0; // HARD CODED!
+		session.systems = ["steves_reef"]; // HARD CODED!
 	}
-	session.user = "sbsuth"; // HARD CODED!
-	session.system_index = 0; // HARD CODED!
-	session.systems = ["steves_reef"]; // HARD CODED!
-	session.instruments = default_instruments; // HARD CODED!
-	session.dashboard = dashboard;
+
+	req.instruments = default_instruments; // HARD CODED!
+	req.dashboard = dashboard;
 
 	// Allow each module to intialize its instruments.
 	var i;
-	for ( i=0; i < session.instruments.length; i++ ) {
-		var instr = session.instruments[i];
+	for ( i=0; i < req.instruments.length; i++ ) {
+		var instr = req.instruments[i];
 		instr.mod = get_instr_mod(instr.type);
-		get_instr_mod(instr.type).init_session(instr);
+		get_instr_mod(instr.type).init_session(req);
 	}
 }
 
@@ -367,19 +372,7 @@ function send_instr_cmd( instr, cmd, successfunc, failurefunc )
 	var result = "";
 	var state = {nread: 0, content_len: -1, result: "", connected: false};
 
-	client.setTimeout(3000, function() {
-		if (debug_queue) {
-			console.log("QUEUE: Timeout sending command '"+cmd+"'");
-		}
-		state.result = "Timeout sending command '"+cmd+"'";
-		success = false;
-		if (!client.connected) {
-			failurefunc( state.result );
-			instr_cmd_done( instr );
-		}
-		client.end();
-	});
-
+	client.setTimeout(3000);
 	client.connect( url[1], url[0], function() {
 		if (debug_queue > 1) {
 			console.log("QUEUE: Client connected. Sending command.");
@@ -393,6 +386,7 @@ function send_instr_cmd( instr, cmd, successfunc, failurefunc )
 			console.log("QUEUE: Got result from cmd '"+cmd+"': "+data.toString());
 		}
 		if (parse_reply( state, data.toString() )) {
+			client.setTimeout(0);
 			client.end();
 		}
 		success = true;
@@ -405,6 +399,7 @@ function send_instr_cmd( instr, cmd, successfunc, failurefunc )
 		}
 		success = false;
 		client.end();
+		client.setTimeout(0);
 	});
 
 	client.on('close', function() {
@@ -427,9 +422,26 @@ function send_instr_cmd( instr, cmd, successfunc, failurefunc )
 			failurefunc( state.result );
 		}
 		instr_cmd_done( instr );
-		client.connected = false;
+		state.connected = false;
+		client.setTimeout(0);
 		client.end();
 	});
+	client.on('timeout', function() {
+		if (debug_queue) {
+			console.log("QUEUE: Timeout sending command '"+cmd+"'");
+		}
+		state.result = "Timeout sending command '"+cmd+"'";
+		success = false;
+		if (client.connecting) {
+			failurefunc( state.result );
+			instr_cmd_done( instr );
+		}
+		client.setTimeout(0);
+		state.connected = false;
+		client.end();
+		
+	});
+
 }
 
 function queue_and_send_instr_cmd( instr, cmd, successfunc, failurefunc, res )  {

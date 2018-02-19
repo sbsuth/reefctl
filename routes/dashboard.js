@@ -8,16 +8,19 @@ var request = require('request');
 router.get('/dashboard', function(req, res) {
 	var utils = req.utils;
 	var widgets = [];
-	req.session.instruments.forEach( function(instr) {
+	req.instruments.forEach( function(instr) {
 		var mod = utils.get_instr_mod(instr.type);
-		var widget_data = {
-			instr : instr,
-			status_key: instr.address + ";" + mod.status_cmd + ";" + mod.status_route,
-			widget_body: mod.widget_page,
-			details_page: mod.main_page + "/" + instr.name
-		};
-		mod.init_widget_data( req.session, instr, widget_data );
-		widgets.push( widget_data );
+		if (mod.widget_page != undefined) {
+			var mod = utils.get_instr_mod(instr.type);
+			var widget_data = {
+				instr : instr,
+				status_key: instr.address + ";" + mod.status_cmd + ";" + mod.status_route,
+				widget_body: mod.widget_page,
+				details_page: mod.main_page + "/" + instr.name
+			};
+			mod.init_widget_data( req, instr, widget_data );
+			widgets.push( widget_data );
+		}
 	});
 	var d = utils.get_master_template_data(req);
 	d.load_javascript.push( "/js/dashboard.c.js" );
@@ -27,7 +30,7 @@ router.get('/dashboard', function(req, res) {
 	res.render('dashboard', d );
 });
 
-function init_session( session )
+function init_session( req )
 {
 }
 
