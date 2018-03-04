@@ -6,7 +6,8 @@ var topup_settings = {
 	post_timeout_interval_sec:	1 * 60,
 	num_retries:				5,
 	ro_min_level:				20,
-	debug:						2
+	debug:						2,
+	daytime_only:				true
 };
 
 // Initialize missing fields in topup data.
@@ -155,7 +156,12 @@ function topupTask( data ) {
 // True if its OK to fill from the RO res given a status.
 // Goes into 'ro_recovering' mode when level>ro_min_level,
 // then returns false until the float sw closes again.
+// Also requires that it be daytime if daytime_only is set.
 function ro_fill_ok(data,status) {
+	if (topup_settings.daytime_only && !data.utils.is_daytime()) {
+		return false;
+	}
+
 	if (data.res_recovering) {
 		if (status.res_sw) {
 			data.res_recovering = false;
@@ -164,6 +170,10 @@ function ro_fill_ok(data,status) {
 			return false;
 		}
 	} else {
+		if (status.res_lev < 3) {
+			// Something's wrong.  No data.
+			return false;
+		}
 		if (status.res_lev >= topup_settings.ro_min_level) {
 			data.res_recovering = true;
 			return false;
@@ -184,11 +194,11 @@ function startup( utils ) {
 	sump_level_instr.topupData = { 
 		utils: utils,
 		instrs:  instrs,
-		enabled: false,
+		enabled: true,
 		target_instr_name: sump_level_instr.name,
 		pump_num: 1,
 		target_fill_ok: function(data,status) {
-			return Boolean(status.sump_sw && (status.sump_lev > 5));
+			return Boolean(status.sump_sw && (status.sump_lev > 10));
 		},
 		ro_fill_ok: ro_fill_ok,
 		ro_res_instr_name: ro_res_instr.name
@@ -201,9 +211,9 @@ function startup( utils ) {
 	salt_res_instr.topupData = { 
 		utils: utils,
 		instrs:  instrs,
-		enabled: false,
+		enabled: true,
 		target_instr_name: salt_res_instr.name,
-		pump_num: 0,
+		pump_num: 2,
 		target_fill_ok: function(data,status) {
 			return Boolean(!status.float_sw && (status.dist > 5));
 		},
@@ -217,7 +227,7 @@ function startup( utils ) {
 	sump_level_instr.fillData = { 
 		utils: utils,
 		instrs:  instrs,
-		enabled: true,
+		enabled: false,
 		target_instr_name: sump_level_instr.name,
 		pump_num: 2,
 		target_fill_ok: function(data,status) {
