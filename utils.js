@@ -450,6 +450,17 @@ function queue_and_send_instr_cmd( instr, cmd, successfunc, failurefunc, res )  
 	}, res );
 }
 
+// 10AM or later, before 11PM.
+function is_daytime() {
+	var d = new Date();
+	var hour = d.getHours(); // Midnight is 0.
+	if ((hour >= 10) && (hour < 23)) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 module.exports = {
 	init_dust_helpers: function( dust_in ) {
 		dust = dust_in;
@@ -471,5 +482,6 @@ module.exports = {
 	send_instr_cmd_http: send_instr_cmd_http,
 	send_instr_cmd: send_instr_cmd,
 	instr_cmd_done: instr_cmd_done,
-	default_instruments: default_instruments
+	default_instruments: default_instruments,
+	is_daytime: is_daytime
 };
