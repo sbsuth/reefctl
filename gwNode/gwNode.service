@@ -1,0 +1,13 @@
+[Unit]
+Description=RF24 Gateway
+
+[Service]
+StandardOutput=journal+console 
+StandardError=journal+console
+User=root
+WorkingDirectory=/home/sbs/work/reefctl/gwNode
+ExecStart=/usr/bin/make run
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
