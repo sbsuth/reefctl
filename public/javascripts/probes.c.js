@@ -25,16 +25,16 @@ probes.handleStatus = function ( data ) {
 		page.debugMsg("Got stand status: "+JSON.stringify(data));
 		page.clearError();
 		
-		var pH = (data.pH==undefined) ? 0.0 : data.pH;
+		var pH = (data.pH==undefined) ? 0.0 : parseFloat(data.pH.replace(/^\"/,''));
 		var EC = (data.EC==undefined) ? 0.0 : data.EC;
 		var SAL = (data.SAL==undefined) ? 0.0 : data.SAL;
-		var SG = (data.SG==undefined) ? 0.0 : data.SG;
+		var SG = (data.SG==undefined) ? 0.0 : parseFloat(data.SG.replace(/^\"/,''));
 		var TDS = (data.TDS==undefined) ? 0.0 : data.TDS;
-		$('#cur_ph').text(pH.toFixed(1));
-		$('#cur_sg').text(SG.toFixed(1));
+		$('#cur_ph').text(pH.toFixed(2));
+		$('#cur_sg').text(SG.toFixed(3));
 		$('#cur_sal').text(SAL.toFixed(1));
-		$('#cur_cond').text(EC.toFixed(1));
-		$('#cur_tds').text(TDS.toFixed(1));
+		$('#cur_cond').text(EC.toFixed(0));
+		$('#cur_tds').text(TDS.toFixed(0));
 
 		page.goodUpdate();
 	} else if (data.error == 429) {

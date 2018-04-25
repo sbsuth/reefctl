@@ -262,14 +262,17 @@ powerheads.enable_controls = function( index ) {
 			enable = [0,2];
 			break;
 		case 2:  // Square 
-			enable = [0,1,3,4];
+			enable = [0,1,2,3,4];
 			break;
 		case 3: // Ramp 
-			enable = [0,1,3,4,5,6];
+			enable = [0,1,2,3,4,5,6];
 			break;
 		case 4: // Off 
 		case 5:  // Test 
 			enable = [0];
+			break;
+		case 6: // Sin 
+			enable = [0,1,2,5,6];
 			break;
 	}
 	for ( var i=1; i < 7; i++ ) {
@@ -338,7 +341,7 @@ $(document).ready(function() {
 	var page = powerheads;
 	page.last_settings = ["",""];;
 	page.mode_controls = [0,3,4,5,6];
-	page.mode_names = ["Constant","Slow","Square","Ramp","Off","Test"];
+	page.mode_names = ["Constant","Slow","Square","Ramp","Off","Test","Sin"];
 	page.i_pstat = [2,3]; // Indexes in pump status array for each powerhead.
 
 	var instr_elem = $( '#instr_name' )[0];

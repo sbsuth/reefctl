@@ -73,7 +73,10 @@ power.sendCmd = function(event,cmd,unit) {
 	if (page.waiting_status) {
 		page.ignore_status++;
 	}
-	var url = "/power_cmd/" + cmd + "/" + page.instr_name + "/" + unit
+	var url = "/power_cmd/" + cmd + "/" + page.instr_name;
+	if (unit != undefined) {
+		url += "/" + unit;
+	}
 	$.ajax({
 		type: 'POST',
 		url: url,
@@ -125,6 +128,8 @@ $(document).ready(function() {
 
     // button events
     power_cbs.on('change', {page: page}, power.switchChange);
+    $('#btnSave').on('click', function (event) {page.sendCmd(event,"sset")});
+    $('#btnRestore').on('click', function (event) {page.sendCmd(event,"rset")});
 
 	page.setupStandard(page);
 
