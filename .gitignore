@@ -13,7 +13,9 @@ logs
 results
 build
 diffs
+reefctl@0.0.0
 
 node_modules
+bower_components
 
 data
