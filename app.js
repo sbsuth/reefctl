@@ -5,6 +5,7 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 var session = require('express-session')
+var MongoStore = require('connect-mongo')(session);
 
 var mongo = require('mongodb');
 var monk = require('monk');
@@ -14,6 +15,7 @@ var routes = require('./routes/index');
 var users = require('./routes/users');
 var test = require('./routes/test')
 var dashboard = require('./routes/dashboard')
+var login = require('./routes/login')
 
 var app = express();
 
@@ -45,18 +47,21 @@ app.use('/css', express.static(__dirname + '/node_modules/bootstrap/dist/css'));
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap-checkbox/dist/js')); // redirect bootstrap JS
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap-select/dist/js')); // redirect bootstrap JS
 app.use('/fonts', express.static(__dirname + '/node_modules/bootstrap/fonts')); 
+app.use('/js', express.static(__dirname + '/bower_components/crypto-js')); // redirect crypto-js
 
 
 // Filter to define session.
 app.use(session({
 	secret: 'steves reef',
     resave: false,
-	saveUninitialized: true
+	saveUninitialized: true,
+	store: new MongoStore({url:"mongodb://localhost/reefctl" })
 }))
 
 // Filter to add app-level objects to the request.
 app.use(function(req,res,next){
     req.db = db;
+
 	req.dust = dust;
 	req.utils = utils;
 	req.monitors = monitors;
@@ -65,15 +70,21 @@ app.use(function(req,res,next){
     next();
 });
 
+app.use( function(req,res,next) {
+	console.log("HEY: gotta go through me!");
+	next();
+});
+
 app.use('/', routes);
 app.use('/users', users);
 app.use('/test', test);
 app.use('/', dashboard.router);
+app.use('/', login.router);
 
 utils.setup_instr_routes( app );
 
 var monitors = require("./monitors");
-monitors.startup( utils );
+//monitors.startup( utils );
 
 
 // catch 404 and forward to error handler
