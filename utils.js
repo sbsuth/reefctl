@@ -178,6 +178,11 @@ var default_instruments = [
 	  label: "Saltwater Reservoir",
 	  address: "10.10.2.8:1000"
 	},
+	{ name: 'dosing',
+	  type: 'dosing',
+	  label: "Dosing Pumps",
+	  address: "10.10.2.8:1000"
+	},
 ];
 
 // Called from an early filter to initialize the session.
@@ -189,9 +194,9 @@ function init_session( req )
 {
 	var session = req.session;
 	if (session.user == undefined) {
-		session.user = "sbsuth"; // HARD CODED!
-		session.system_index = 0; // HARD CODED!
-		session.systems = ["steves_reef"]; // HARD CODED!
+		//session.user = "sbsuth"; // HARD CODED!
+		//session.system_index = 0; // HARD CODED!
+		//session.systems = ["steves_reef"]; // HARD CODED!
 	}
 
 	req.instruments = default_instruments; // HARD CODED!
