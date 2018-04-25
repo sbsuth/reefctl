@@ -6,7 +6,7 @@ var debug_power = 1;
 /*
  * POST a command to the panel.
  */
-router.post('/power_cmd/:cmd/:instr_name/:unit', function(req, res) {
+router.post('/power_cmd/:cmd/:instr_name/:unit?', function(req, res) {
 
 	var utils = req.utils;
     var cmd = req.params.cmd;
@@ -17,7 +17,7 @@ router.post('/power_cmd/:cmd/:instr_name/:unit', function(req, res) {
 		utils.send_error( res, "power panel \'"+instr_name+"\' unknown.");
 		return;
 	}
-	if (unit >= 0) {
+	if ((unit != undefined) && (unit >= 0)) {
 		cmd += " " +unit;
 	}
 	var url = instr.address;
@@ -96,8 +96,8 @@ router.get('/power_main/:instr_name', function(req, res) {
 	d.switch_rows = [
 					{cols: [{i:0, l:"Power Head #1"},  {i:1, l:"Power Head #2"}]},
 					{cols: [{i:2, l:"Return"},         {i:3, l:"Skimmer"}]},
-					{cols: [{i:4, l:"Stand Light"},    {i:5, l:"Reactor"}]},
-					{cols: [{i:6, l:"(unused)"},      {i:7, l:"(unused)"}]}
+					{cols: [{i:4, l:"(unused)"},    {i:5, l:"(unused)"}]},
+					{cols: [{i:6, l:"(unused)"},    {i:7, l:"Stand Light"}]}
 				 ];
 	res.locals.session = req.session;
 	res.render("power_main", d );
