@@ -7,5 +7,8 @@ stop:
 log:
 	tail -f reefctl.log
 
-start_db:
-	mongod --dbpath ${PWD}/data &
+ps:
+	-ps -auxw | grep node | grep -v grep
+
+restart_db:
+	sudo systemctl restart mongodb.service
