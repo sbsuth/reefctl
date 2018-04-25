@@ -1,32 +1,49 @@
 {>"master" /}
-{<title}: Sign in{/title}
+{<title}: Sign In{/title}
 {<bodyContent}
-<input type=hidden id=instr_name value={instr_name} />
 <div class="container-fluid outer-container">
-	<div class="container title_row">
-		<table width=100%><tr>
-		<td width=90%><h3>Sign in:</h3></td>
-		</tr></table>
-	</div><!--container-->
 	<div class="container-fluid">
 		<div class="row">
-			<!-- Current values -->
-			<div class="col-xs-12 col-sm-6">
+			<div class="col-xs-12 col-md-6">
 				<div class="x_panel">
 				 <div class="x_title">
-					<h2>Log in</h2>
+					<h2>Sign in</h2>
 				 </div>
 				 <div class="x_content">
-					<div class="row">
-						<div class="col-xs-12">
-							<table class="x_table" width=100%>
-							<tr class=x_row_emphasize><td>Username</td><td id=username></td></tr>
-							<tr class=x_row_emphasize><td>Password Gravity</td><td id=password></td></tr>
-							</table>
+					<form action="/login" method="post">
+						<input name=target_url id=target_url type="hidden" value={target_url}>
+						<input id=msg type="hidden" value="{msg}">
+						<div class="row">
+							<div class="col-xs-12">
+								<table class="x_table" width=100%>
+										<tr class=x_row>
+											<td class="w_20 row_label" id=username_label>Username:</td>
+											<td>
+												<div class="input-group input-group-sm">
+													<input  id="username" name="username" type="text" class="form-control" placeholder="(username)" value="{username}">
+												</div><!-- /input-group -->
+											</td>
+										</tr>
+										<tr class=x_row>
+											<td class="w_20 row_label" id=password_label>Password:</td>
+											<td>
+												<div class="input-group input-group-sm">
+													<input  id="password" name="password" type="password" class="form-control">
+												</div><!-- /input-group -->
+											</td>
+										</tr>
+										<tr class=x_row>
+											<td class="w_20 row_label">&nbsp;</td>
+											<td>
+										  <button type="submit" class="btn btn-primary" id="btnSubmit" width=40>Login</button>
+											</td>
+										</tr>
+								</table>
+							</div>
 						</div>
-					</div>
+					</form>
 				 </div>
-				</div>
+				 </div>
 			</div><!--col-->
 		</div><!--row-->
 	</div><!--container-->
@@ -34,7 +51,7 @@
 		<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
 		 <table><tr>
 			 <td><p/></td>
-			 <td><button type="button" aria-hidden="true" onclick="login.clearError()">&times;</button></td>
+			 <td><button type="button" aria-hidden="true" </button></td>
 		</tr></table>
 		</div>
 	</div>

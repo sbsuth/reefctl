@@ -20,6 +20,7 @@ $(document).ready(function() {
 	 $("form").on("submit",function() {
 		 var pwd_field = $(this).find("input[name=password]");
 		var encrypted = CryptoJS.SHA256(pwd_field.val())
+		console.log("HEY: encrypted="+encrypted);
 		pwd_field.val(encrypted); 
 	});
 });
