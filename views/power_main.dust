@@ -50,10 +50,17 @@
 	</div><!--row-->
 </div><!--container-->
 <div class="container" >
+  <table><tr>
+	<td><button type="button" class="btn btn-primary" id="btnSave" width=40>Save as default</button></td>
+	<td><button type="button" class="btn btn-info" id="btnRestore" width=40>Restore defaults</button></td>
+  </tr></table>
+</div><!--container-->
+<div class="container" >
 	<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
 	 <table><tr>
 	   <td><p/></td>
 	   <td><button type="button" aria-hidden="true" onclick="clearError()">&times;</button></td>
+	   <td><p>Save current switch settings to be applied on power-up.</p></td>
 	</tr></table>
 	</div>
 </div><!--container-->
