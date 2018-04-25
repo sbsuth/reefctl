@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var login = require('./login')
 
 var debug_stand = 1;
 
@@ -125,7 +126,7 @@ router.get('/temp_main/:instr_name', function(req, res) {
 /*
  * GET probes_main.
  */
-router.get('/probes_main/:instr_name', function(req, res) {
+router.get('/probes_main/:instr_name', login.validateUser, function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
 	var instr = utils.get_instr_by_name(req.instruments,instr_name);
@@ -144,8 +145,8 @@ router.get('/probes_main/:instr_name', function(req, res) {
 					 has_value: false,
 					 steps: [
 						{ help: calHelp }, 
-						{ i: 0, label: "4.0", units: ""},
-						{ i: 1, label: "7.0", units: ""},
+						{ i: 0, label: "7.0", units: ""},
+						{ i: 1, label: "4.0", units: ""},
 						{ i: 2, label: "10.0", units: ""}
 					 ]
 					},
@@ -257,6 +258,15 @@ module.exports = {
 		widget_page: undefined,
 		status_cmd: "stat",
 		status_route: "stand_status",
+		init_session: init_session,
+		init_widget_data: init_widget_data
+	  },
+	  { name: "dosing", // Bogus!  Needs to go in an dosing route
+		label: "Dosing Pumps",
+		main_page: undefined,
+		widget_page: undefined,
+		status_cmd: "stat",
+		status_route: "dosing_status",
 		init_session: init_session,
 		init_widget_data: init_widget_data
 	  },
