@@ -6,7 +6,10 @@ if (!username || !pwd) {
 	console.log("ERROR: Must specify username and password.");
 	process.exit(1);
 }
-hashed = SHA256(SHA256(pwd));
+console.log("start="+pwd);
+console.log("1="+SHA256(pwd));
+hashed = SHA256(String(SHA256(pwd)));
+console.log("2="+hashed);
 var mongo = require('mongodb');
 var monk = require('monk');
 var db = monk('localhost:27017/reefctl');
