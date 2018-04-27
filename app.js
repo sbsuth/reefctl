@@ -84,7 +84,7 @@ app.use('/', login.router);
 utils.setup_instr_routes( app );
 
 var monitors = require("./monitors");
-//monitors.startup( utils );
+monitors.startup( utils );
 
 
 // catch 404 and forward to error handler

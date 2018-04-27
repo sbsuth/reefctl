@@ -51,7 +51,7 @@ router.post('/fixture_cmd/:cmd/:instr_name', function(req, res) {
 router.get('/fixture_height/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req,instr_name);
+	var instr = utils.get_instr_by_name(instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "ERROR: fixture instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -88,7 +88,7 @@ router.get('/fixture_height/:instr_name', function(req, res) {
 router.get('/fixture_main/:instr_name', function(req, res) {
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req,instr_name);
+	var instr = utils.get_instr_by_name(req.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "fixture instrument \'"+instr_name+"\' unknown.");
 		return;

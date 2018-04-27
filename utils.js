@@ -215,6 +215,7 @@ function init_session( req )
 // for the master template.
 function get_master_template_data( req ) {
 	var d = { session: req.session,
+			  instruments: req.instruments,
 			  load_javascript: []
 			};
 	return d;

@@ -27,6 +27,14 @@ router.get('/login', function(req, res) {
 });
 
 /*
+ * GET logout.
+ */
+router.get('/logout', function(req, res) {
+	req.session.user = undefined;
+	loginPrompt( req, res, "", undefined,"/dashboard" );
+});
+
+/*
  * POST login.
  */
 router.post('/login', function(req, res) {
