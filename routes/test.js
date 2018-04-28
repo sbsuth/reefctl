@@ -7,6 +7,7 @@ var request = require('request');
  */
 router.get('/test1', function(req, res) {
 console.log("In test1 get\n");
+	var session = req.session;
 	var d = { title: 'test1' };
 	res.locals.session = req.session;
 	res.render('test1', { d: d } );

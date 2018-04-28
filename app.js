@@ -29,6 +29,7 @@ app.set('view engine', 'dust');
 var utils = require("./utils");
 utils.init_dust_helpers( dust );
 utils.load_instr_mods();
+utils.db = db;
 
 // uncomment after placing your favicon in /public
 app.use(favicon(__dirname + '/public/images/favicon.ico'));
@@ -58,6 +59,10 @@ app.use(session({
 	store: new MongoStore({url:"mongodb://localhost/reefctl" })
 }))
 
+var monitors = require("./monitors");
+monitors.startup( utils );
+
+
 // Filter to add app-level objects to the request.
 app.use(function(req,res,next){
     req.db = db;
@@ -65,14 +70,7 @@ app.use(function(req,res,next){
 	req.dust = dust;
 	req.utils = utils;
 	req.monitors = monitors;
-	utils.init_session(req);
-
-    next();
-});
-
-app.use( function(req,res,next) {
-	console.log("HEY: gotta go through me!");
-	next();
+	utils.init_session(req,next);
 });
 
 app.use('/', routes);
@@ -82,9 +80,6 @@ app.use('/', dashboard.router);
 app.use('/', login.router);
 
 utils.setup_instr_routes( app );
-
-var monitors = require("./monitors");
-monitors.startup( utils );
 
 
 // catch 404 and forward to error handler

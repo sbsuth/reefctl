@@ -9,6 +9,7 @@ var debug_stand = 1;
  */
 router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?/:arg4?', function(req, res) {
 
+	var session = req.session;
 	var utils = req.utils;
     var cmd = req.params.cmd
 				+ ((req.params.arg1 != undefined) ? " "+req.params.arg1 : "")
@@ -16,7 +17,7 @@ router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?/:arg4?', function(
 				+ ((req.params.arg3 != undefined) ? " "+req.params.arg3 : "")
 				+ ((req.params.arg4 != undefined) ? " "+req.params.arg4 : "")
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.instruments,instr_name);
+	var instr = utils.get_instr_by_name(ession.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "stand \'"+instr_name+"\' unknown.");
 		return;
@@ -48,9 +49,10 @@ router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?/:arg4?', function(
 // GET stand_status query.
 //
 router.get('/stand_status/:instr_name/:option?', function(req, res) {
+	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.instruments,instr_name);
+	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "ERROR: stand instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -84,9 +86,10 @@ router.get('/stand_status/:instr_name/:option?', function(req, res) {
  * GET temp_main.
  */
 router.get('/temp_main/:instr_name', function(req, res) {
+	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.instruments,instr_name);
+	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "temp control instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -119,7 +122,6 @@ router.get('/temp_main/:instr_name', function(req, res) {
 					 ]
 					}
 				 ];
-	res.locals.session = req.session;
 	res.render("temp_main", d );
 });
 
@@ -127,9 +129,10 @@ router.get('/temp_main/:instr_name', function(req, res) {
  * GET probes_main.
  */
 router.get('/probes_main/:instr_name', login.validateUser, function(req, res) {
+	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.instruments,instr_name);
+	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "probes instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -162,7 +165,6 @@ router.get('/probes_main/:instr_name', login.validateUser, function(req, res) {
 					 ]
 					}
 				 ];
-	res.locals.session = req.session;
 	res.render("probes_main", d );
 });
 
@@ -170,9 +172,10 @@ router.get('/probes_main/:instr_name', login.validateUser, function(req, res) {
  * GET powerheads_main.
  */
 router.get('/powerheads_main/:instr_name', function(req, res) {
+	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.instruments,instr_name);
+	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "powerheads instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -189,7 +192,6 @@ router.get('/powerheads_main/:instr_name', function(req, res) {
 	                {i: 6, id: "ramp_range",  kind: "edit", func: "set_mode", label: "Ramp Range(%)"}
 				   ];
 	d.indexes = [{index: 0, settings: settings},{index: 1, settings: settings}];
-	res.locals.session = req.session;
 	res.render("powerheads_main", d );
 });
 

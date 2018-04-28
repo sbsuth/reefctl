@@ -8,11 +8,12 @@ var debug_power = 1;
  */
 router.post('/power_cmd/:cmd/:instr_name/:unit?', function(req, res) {
 
+	var session = req.session;
 	var utils = req.utils;
     var cmd = req.params.cmd;
 	var instr_name = req.params.instr_name;
 	var unit = req.params.unit;
-	var instr = utils.get_instr_by_name(req.instruments,instr_name);
+	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "power panel \'"+instr_name+"\' unknown.");
 		return;
@@ -46,9 +47,10 @@ router.post('/power_cmd/:cmd/:instr_name/:unit?', function(req, res) {
 // GET switch_status query.
 //
 router.get('/power_status/:instr_name', function(req, res) {
+	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.instruments,instr_name);
+	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "ERROR: power panel \'"+instr_name+"\' unknown.");
 		return;
@@ -83,9 +85,10 @@ router.get('/power_status/:instr_name', function(req, res) {
  * GET power_main.
  */
 router.get('/power_main/:instr_name', function(req, res) {
+	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.instruments,instr_name);
+	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "power panel \'"+instr_name+"\' unknown.");
 		return;
@@ -99,7 +102,6 @@ router.get('/power_main/:instr_name', function(req, res) {
 					{cols: [{i:4, l:"(unused)"},    {i:5, l:"(unused)"}]},
 					{cols: [{i:6, l:"(unused)"},    {i:7, l:"Stand Light"}]}
 				 ];
-	res.locals.session = req.session;
 	res.render("power_main", d );
 });
 

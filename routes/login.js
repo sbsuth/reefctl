@@ -15,7 +15,6 @@ function loginPrompt( req, res, msg, username, target_url ) {
 	d.msg = msg ? msg : "";
 	d.username = username ? username : "";
 	d.target_url = target_url ? target_url : req.originalUrl;
-	res.locals.session = req.session;
 	res.render("login", d );
 }
 
@@ -30,7 +29,8 @@ router.get('/login', function(req, res) {
  * GET logout.
  */
 router.get('/logout', function(req, res) {
-	req.session.user = undefined;
+	var utils = req.utils;
+	utils.clear_session(req.session);
 	loginPrompt( req, res, "", undefined,"/dashboard" );
 });
 
@@ -54,6 +54,11 @@ router.post('/login', function(req, res) {
 				msg = "Bad password.  Try again.";
 			} else {
 				req.session.user = username;
+
+				// Hard code system_name to the user's first system.
+				req.session.system_name = doc[0].systems[0];
+
+				// Redirect to the target, or if the target is unspecified, or /login,  go to the dashboard.
 				var url = (target_url && (target_url != "/login")) ? target_url : "/dashboard";
 				res.redirect( url);
 			}

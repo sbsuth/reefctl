@@ -86,9 +86,10 @@ router.get('/fixture_height/:instr_name', function(req, res) {
  * GET fixture_main.
  */
 router.get('/fixture_main/:instr_name', function(req, res) {
+	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(req.instruments,instr_name);
+	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "fixture instrument \'"+instr_name+"\' unknown.");
 		return;
@@ -96,7 +97,6 @@ router.get('/fixture_main/:instr_name', function(req, res) {
 	var d = utils.get_master_template_data(req);
 	d.load_javascript.push( "/js/fixture.c.js" );
 	d.instr_name = instr_name;
-	res.locals.session = req.session;
 	res.render("fixture_main", d );
 });
 

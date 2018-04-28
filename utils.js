@@ -45,14 +45,6 @@ function partial_indirect_helper(chunk, context, bodies, params) {
 	return tmpl( chunk, context.push(params) );
 }
 
-// Return an object with the info we need for this session populated.
-function setup_session( session )
-{
-	return { user: "sbsuth",
-			 cur_system: 1,
-			};
-}
-
 // Instrument route names: one per file containing routes.
 var instr_route_names = [
 	"fixture",
@@ -65,7 +57,6 @@ var instr_routes = [];
 var instr_mod_names = [];
 var instr_mods = [];
 
-var dashboard = undefined;
 
 function load_instr_mods()
 {
@@ -185,37 +176,59 @@ var default_instruments = [
 	},
 ];
 
+// Step 2 in session setup: get instruments for user's system.
+// Users have an array of systems, and we read the instruments from the DB
+// for the system, given its name.
+function init_session_instruments( req, next )
+{
+}
+
 // Called from an early filter to initialize the session.
 // Initializes the data in the session if its not already initialized.
 // This includes the definition of the instruments in the currently
 // selected system.  
 // INCOMPLETE: The "system" is hard-coded now.
-function init_session( req )
+function init_session( req, next )
 {
 	var session = req.session;
-	if (session.user == undefined) {
-		//session.user = "sbsuth"; // HARD CODED!
-		//session.system_index = 0; // HARD CODED!
-		//session.systems = ["steves_reef"]; // HARD CODED!
+	if (session.user != undefined && (session.instruments == undefined )) {
+		// Lookup in the system by session.system_name, which should be set when user is set during login.
+		var systems = req.db.get('systems');
+		systems.find( {name: session.system_name} ).then( (docs) => {
+			if (docs.length > 0) {
+				session.instruments = docs[0].instruments;
+
+				// Allow each module to intialize its instruments.
+				var i;
+				for ( i=0; i < session.instruments.length; i++ ) {
+					var instr = session.instruments[i];
+					instr.mod = get_instr_mod(instr.type);
+					get_instr_mod(instr.type).init_session(req);
+				}
+			}
+			next();
+		});
+	} else {
+		next();
 	}
 
-	req.instruments = default_instruments; // HARD CODED!
-	req.dashboard = dashboard;
 
-	// Allow each module to intialize its instruments.
-	var i;
-	for ( i=0; i < req.instruments.length; i++ ) {
-		var instr = req.instruments[i];
-		instr.mod = get_instr_mod(instr.type);
-		get_instr_mod(instr.type).init_session(req);
-	}
+	//session.instruments = default_instruments; // HARD CODED!
+
+}
+
+// Clear out the session when logging out.
+function clear_session( session )
+{
+	session.user = undefined;
+	session.instruments = undefined;
 }
 
 // Fill an object with the basic info needed from the session
 // for the master template.
 function get_master_template_data( req ) {
 	var d = { session: req.session,
-			  instruments: req.instruments,
+			  instruments: req.session.instruments,
 			  load_javascript: []
 			};
 	return d;
@@ -472,7 +485,6 @@ module.exports = {
 		dust = dust_in;
 		dust.helpers.partial_indirect = partial_indirect_helper;
 	},
-	setup_session: setup_session,
 	load_instr_mods: load_instr_mods,
 	get_instr_mod: get_instr_mod,
 	get_instr_info: get_instr_info,
@@ -480,6 +492,7 @@ module.exports = {
 	save_instr_info: save_instr_info,
 	setup_instr_routes: setup_instr_routes,
 	init_session: init_session,
+	clear_session: clear_session,
 	get_master_template_data: get_master_template_data,
 	get_instr_by_name: get_instr_by_name,
 	send_error: send_error,

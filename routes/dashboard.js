@@ -6,9 +6,10 @@ var request = require('request');
  * GET dashboard.
  */
 router.get('/dashboard', function(req, res) {
+	var session = req.session;
 	var utils = req.utils;
 	var widgets = [];
-	req.instruments.forEach( function(instr) {
+	session.instruments.forEach( function(instr) {
 		var mod = utils.get_instr_mod(instr.type);
 		if (mod.widget_page != undefined) {
 			var mod = utils.get_instr_mod(instr.type);

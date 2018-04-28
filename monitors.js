@@ -1,7 +1,6 @@
 
 // Shared settings for all topup monitors.
 var topup_settings = {
-	label:						"TOPUP",
 	init_data:					initTopupData,
 	exec_task:					topupTask,
 	active_interval_sec:		10,
@@ -10,12 +9,13 @@ var topup_settings = {
 	num_retries:				5,
 	ro_min_level:				20,
 	debug:						2,
-	daytime_only:				true
+	daytime_only:				true,
+	ro_res_instr_type:			"ro_res",
+	ro_fill_ok:					ro_fill_ok
 };
 
 // Settings for all dosing monitors
 var dosing_settings = {
-	label:						"DOSING",
 	init_data:					initDosingData,
 	exec_task:					dosingTask,
 	active_interval_sec:		30, // Glitch in pump with every check so do infrequently.
@@ -27,95 +27,70 @@ var dosing_settings = {
 	daytime_only:				true
 };
 
-function startup( utils ) {
-	
-	var instrs = utils.default_instruments; // INCOMPLETE! Hard coded.
+// Un-instances monitor types.
+var monitor_types = {};
+
+// Initializes non-instances monitor records and returns an object containing them.
+function create_monitor_types() 
+{
+	var monitors = {};
+
 
 	//
 	// ATO
 	//
 	// sump level topup monitor enabled by default.
-	var sump_level_instr = utils.get_instr_by_type( instrs, "sump_level" );
-	var ro_res_instr = utils.get_instr_by_type( instrs, "ro_res" );
-	sump_level_instr.topupData = { 
-		name: "ATO",
-		utils: utils,
-		instrs:  instrs,
-		enabled: true,
-		target_instr_name: sump_level_instr.name,
-		//pump_num: 0, // peristaltic
-		pump_num: 1,   // pond
+	monitors.ato = { 
+		name: "ato",
+		label: "ATO",
+		target_instr_type: "sump_level",
 		target_fill_ok: function(data,status) {
 			return Boolean(status.sump_sw && (status.sump_lev > 8));
 		},
-		ro_fill_ok: ro_fill_ok,
-		ro_res_instr_name: ro_res_instr.name
 	};
-
-	scheduleIter(sump_level_instr.topupData, topup_settings);
+	Object.assign( monitors.ato, topup_settings );
 
 	//
 	// SALTWATER RES REFILL
 	//
 	// saltwater res topup monitor, off by default.
-	var salt_res_instr = utils.get_instr_by_type( instrs, "salt_res" );
-	salt_res_instr.topupData = { 
-		name: "Salt Res Refill",
-		utils: utils,
-		instrs:  instrs,
-		enabled: false,
-		target_instr_name: salt_res_instr.name,
-		pump_num: 1,
+	monitors.salt_res_fill = { 
+		name: "salt_res_fill",
+		label: "Salt Res Fill",
+		target_instr_type: "salt_res",
 		target_fill_ok: function(data,status) {
 			return Boolean(!status.float_sw && (status.dist > 5));
 		},
-		ro_fill_ok: ro_fill_ok,
-		ro_res_instr_name: ro_res_instr.name
 	};
-
-	scheduleIter(salt_res_instr.topupData, topup_settings);
+	Object.assign( monitors.salt_res_fill, topup_settings );
 
 	//
 	// MANUAL TANK FILL with RO WATER
 	//
 	// sump fill from RO.  Must be manually terminated by watching sump!
-	sump_level_instr.fillData = { 
-		name: "Manual tank fill",
-		utils: utils,
-		instrs:  instrs,
-		enabled: false,
-		target_instr_name: sump_level_instr.name,
-		pump_num: 1,
+	monitors.manual_tank_fill = { 
+		name: "manual_tank_fill",
+		label: "Manual Tank Fill",
+		target_instr_type: "sump_level",
 		target_fill_ok: function(data,status) {
 			// Always OK.  Must watch!
 			return true;
 		},
-		ro_fill_ok: ro_fill_ok,
-		ro_res_instr_name: ro_res_instr.name
 	};
-
-	//scheduleIter(sump_level_instr.fillData, topup_settings);
+	Object.assign( monitors.manual_tank_fill, topup_settings );
 
 	//
 	// DAILY WATER CHANGE
 	//
 	// Salt water change.
-	var dosing_instr = utils.get_instr_by_type( instrs, "dosing" );
-	dosing_instr.wcData = { 
-		name: "Water change",
-		utils: utils,
-		instrs:  instrs,
-		enabled: false,
-		stand_instr_name: sump_level_instr.name,
-		target_instr_name: dosing_instr.name,
+	monitors.water_change = { 
+		name: "water_change",
+		label: "Water Change",
+		stand_instr_type: "sump_level",
+		target_instr_type: "dosing",
 		num_phases: 2,
 		pump_num: [3,4],
-		start_time: [12,0], // hour, mins.
 		phase: 0,
-		started: false,
-		dosed: [0,0],
-		ml_per_iter: 100,
-		ml_per_day: 2500,
 		stand_ok_for_dosing: function(data,status) {
 			// Always OK for now.
 			return true;
@@ -129,28 +104,84 @@ function startup( utils ) {
 			}
 		},
 	};
+	Object.assign( monitors.water_change, dosing_settings );
 
-	scheduleIter(dosing_instr.wcData, dosing_settings);
+	return monitors;
+}
 
+// Start a monitor given its record from the database, 
+// the associated system, and the global utils.
+function start_monitor( monitor, system, utils ) {
+
+	var sys_info = {
+		utils: utils,
+		system_name: system.name,
+		instrs:  system.instruments,
+	};
+
+	// Expect to find a member of the monitor_types object with the
+	// same name as the monitor.  
+	var monitor_type = monitor_types[monitor.name];
+	if (!monitor_type) {
+		console.log("ERROR: MON: No monitor type \'"+monitor.name+"\'")
+		return;
+	}
+	Object.assign( monitor, monitor_type, sys_info );
+
+	if (monitor.debug) {
+		console.log("MON: "+monitor.label+": Starting");
+	}
+
+	scheduleIter(monitor);
+
+}
+
+function startup( utils ) {
+	
+
+	// Initialize global monitor types.
+	monitor_types = create_monitor_types();
+
+	var systems = utils.db.get("systems");
+	var monitors = utils.db.get("monitors");
+
+	systems.find({}).then( (system_objs) => {
+		for ( var isys=0; isys < system_objs.length; isys++ ) {
+			var system = system_objs[isys];
+			if (system.auto_start_monitors) {
+				monitors.find( {name: {$in: system.monitors}, system: system.name}, {}, function( err, monitor_objs ) {
+					if (err) {
+						console.log("ERROR: reading monitors for system "+system.name);
+					}
+					if (monitor_objs) {
+						for ( var imon=0; imon < monitor_objs.length; imon++ ) {
+							start_monitor( monitor_objs[imon], system, utils );
+						}
+					}
+				});
+			}
+		}
+	});
 }
 
 
 // Initialize missing fields common to all settings.
 // Returns true if init was done.
-function initData(data, settings) {
+function initData(data) {
 	if (data.initialized) {
 		return false;
 	}
 	data.initialized = true;
 	data.is_active = 0;
 	data.waiting = true; // So first iter will avoid interlock.
-	data.retries_left = settings.num_retries;
+	data.retries_left = data.num_retries;
 	return true;
 }
 
 // Initialize missing fields in topup data.
-function initTopupData(data) {
-	if (!initData(data,topup_settings)) {
+function initTopupData() {
+	var data = this;
+	if (!initData(data)) {
 		return;
 	}
 	data.time_filling = 0;
@@ -158,8 +189,9 @@ function initTopupData(data) {
 }
 
 // Initialize missing fields in dosing data.
-function initDosingData(data) {
-	if (!initData(data,dosing_settings)) {
+function initDosingData() {
+	var data = this;
+	if (!initData(data)) {
 		return;
 	}
 }
@@ -168,12 +200,11 @@ function topupTask( data ) {
 
 	var utils = data.utils;
 	var instrs = data.instrs;
-	var settings = topup_settings;
 
-	var target = utils.get_instr_by_name( instrs, data.target_instr_name );
-	var ro_res = utils.get_instr_by_name( instrs, data.ro_res_instr_name );
+	var target = utils.get_instr_by_type( instrs, data.target_instr_type );
+	var ro_res = utils.get_instr_by_type( instrs, data.ro_res_instr_type );
 	if (target == undefined || ro_res == undefined) {
-		console.log("ERROR: Cant find instruments ("+data.target_instr_name+","+data.ro_res_instr_name+")");
+		console.log("ERROR: Cant find instruments ("+data.target_instr_type+","+data.ro_res_instr_type+")");
 		return;
 	}
 
@@ -185,177 +216,204 @@ function topupTask( data ) {
 	// Set waiting to indicate that all pre-return scheduleIter()'s are valid.
 	data.waiting = true; 
 
-	// If disabled, do nothing, but check if enabled in a while.
-	if (!data.enabled) {
-		scheduleIter(data,settings,false);
-		return;
-	}
+	// Refresh data.
+	data.utils.db.get('monitors').find( 
+		{name: data.name, system: data.system_name}, 
+		'-_id', 
+		function( err, monitor_obj ) {
 
-	// Get the target status, and if not full, run the fill pump
-	utils.queue_and_send_instr_cmd( target, "stat", 
-		function(target_status) { // Success
-			utils.queue_and_send_instr_cmd( ro_res, "stat", 
-				function(ro_status) { // Success
-					if (   data.target_fill_ok(data,target_status)
-						&& data.ro_fill_ok(data,ro_status)) {
-						// Turn on the pump for twice our interval, so we will refresh until its filled.
-						if (!data.is_active) {
-							data.is_active = true;
-							data.time_filling = 0;
-							logFilling( data );
-						}
-						var pon_cmd = "pon "+data.pump_num+" "+(topup_settings.active_interval_sec*2);
-						utils.queue_and_send_instr_cmd( ro_res, pon_cmd, 
-							function(ro_status) { // Success
-								data.time_filling = ro_status.ton;
-								data.retries_left = topup_settings.num_retries; // Reset retries on success.
-								scheduleIter(data,settings);
-							},
-							function(error) { // Failure
-								scheduleIter(data,settings,true);
-								if (!data.is_active) {
-									logFilling( data, error );
-								}
+		if (err) {
+			console.log("MON: ERROR: Failed reading settings for \'"+data.name+"\' during iter.");
+		}
+		if (monitor_obj && monitor_obj.length) {
+			Object.assign( data, monitor_obj[0] );
+		}
+
+		// If disabled, do nothing, but check if enabled in a while.
+		if (!data.enabled) {
+			scheduleIter(data,false);
+			return;
+		}
+
+		// Get the target status, and if not full, run the fill pump
+		utils.queue_and_send_instr_cmd( target, "stat", 
+			function(target_status) { // Success
+				utils.queue_and_send_instr_cmd( ro_res, "stat", 
+					function(ro_status) { // Success
+						if (   data.target_fill_ok(data,target_status)
+							&& data.ro_fill_ok(data,ro_status)) {
+							// Turn on the pump for twice our interval, so we will refresh until its filled.
+							if (!data.is_active) {
+								data.is_active = true;
+								data.time_filling = 0;
+								logFilling( data );
 							}
-						);
-					} else {
-						scheduleIter(data,settings,false);
-						if (data.is_active) {
-							data.is_active = false;
-							logFilling( data );
+							var pon_cmd = "pon "+data.pump_num+" "+(data.active_interval_sec*2);
+							utils.queue_and_send_instr_cmd( ro_res, pon_cmd, 
+								function(ro_status) { // Success
+									data.time_filling = ro_status.ton;
+									data.retries_left = data.num_retries; // Reset retries on success.
+									scheduleIter(data);
+								},
+								function(error) { // Failure
+									scheduleIter(data,true);
+									if (!data.is_active) {
+										logFilling( data, error );
+									}
+								}
+							);
+						} else {
+							scheduleIter(data,false);
+							if (data.is_active) {
+								data.is_active = false;
+								logFilling( data );
+							}
 						}
-					}
-				}, function(error) {topupCommsFailure( data, settings, error );} 
-			);
-		}, function(error) {topupCommsFailure( data, settings, error );}
-	);
+					}, function(error) {topupCommsFailure( data, error );} 
+				);
+			}, function(error) {topupCommsFailure( data, error );}
+		);
+	});
 }
 
 function dosingTask( data ) {
 
 	var utils = data.utils;
 	var instrs = data.instrs;
-	var settings = dosing_settings;
 
-	var stand = utils.get_instr_by_name( instrs, data.stand_instr_name );
-	var dosing = utils.get_instr_by_name( instrs, data.target_instr_name );
+	var stand = utils.get_instr_by_type( instrs, data.stand_instr_type );
+	var dosing = utils.get_instr_by_type( instrs, data.target_instr_type );
 	if (stand == undefined || dosing == undefined) {
-		console.log("ERROR: Cant find instruments ("+data.stand_instr_name+","+data.target_instr_name+")");
+		console.log("ERROR: Cant find instruments ("+data.stand_instr_type+","+data.target_instr_type+")");
 		return;
 	}
 
 	if (data.waiting) {
 		// In an async chain.  Don't restart on timer.
-		if (settings.debug) {
-			console.log(settings.label+": "+data.target_instr_name+": Ignoring event because not waiting.");
+		if (data.debug) {
+			console.log("MON: "+data.label+": "+data.target_instr_type+": Ignoring event because not waiting.");
 		}
 		return;
 	}
 	// Set waiting to indicate that all pre-return scheduleIter()'s are valid.
 	data.waiting = true; 
 
-	// If disabled, do nothing, but check if enabled in a while.
-	if (!data.enabled) {
-		scheduleIter(data,settings,false);
-		return;
-	}
+	// Refresh data.
+	data.utils.db.get('monitors').find( 
+		{name: data.name, system: data.system_name}, 
+		"-started -dosed -_id", 
+		function( err, monitor_obj ) {
 
-	var i;
-    var d = new Date();
-	var hour = d.getHours(); // Midnight is 0.
-	var min = d.getMinutes();
-
-	if (hour == 0) {
-		// Reset for the day.
-		for ( i=0; i < data.num_phases; i++ ) {
-			data.dosed[i] = 0;
+		if (err) {
+			console.log("MON: ERROR: Failed reading settings for \'"+data.name+"\' during iter.");
 		}
-		data.phase = 0;
-		data.started = false;
-		data.is_active = false;
-		scheduleIter(data,settings,false);
-		return;
-	}
+		if (monitor_obj && monitor_obj.length) {
+			Object.assign( data, monitor_obj[0] );
+		}
 
-	if (   (!data.started && ((hour < data.start_time[0]) || (min < data.start_time[1])))
-		|| (data.dosed[data.num_phases-1] >= data.ml_per_day) ) {
-		// Either not time to start, or already done.
-		data.is_active = false;
-		scheduleIter(data,settings,false);
-		return;
-	}
-	data.started = true;
+		// If disabled, do nothing, but check if enabled in a while.
+		if (!data.enabled) {
+			scheduleIter(data,false);
+			return;
+		}
 
-	// If we get here, its time to start, and we're not yet done.
-	// Get the dosing status, judge if we can start the next phase,
-	// then get the stand status, and if OK, do a dose.
-	utils.queue_and_send_instr_cmd( dosing, "stat", 
-		function(dosing_status) { // Success
+		var i;
+		var d = new Date();
+		var hour = d.getHours(); // Midnight is 0.
+		var min = d.getMinutes();
 
-			// If currently dosing, or in an interval,
-			//  or dosing_ok() is false, come back.
-			if (     (dosing_status.num_active > 0)
-				  || (data.interval_remaining > 0)
-				  || !data.dosing_ok(data,dosing_status)) {
-				if (dosing_status.num_active == 0) {
-					if (data.interval_remaining < settings.active_interval_sec) {
-						data.is_active = false; // Go to inactive if already past interval.
-					} else {
-						data.interval_remaining -= settings.active_interval_sec;
-					}
-				}
-				scheduleIter(data,settings,false);
-			} else {
-
-				// Get stand status 
-				utils.queue_and_send_instr_cmd( stand, "stat", 
-					function(stand_status) { // Success
-						if ( data.stand_ok_for_dosing(data,stand_status)) {
-							if (data.dosed[0] == 0) {
-								data.is_active = true;
-								logDosing(data);
-							}
-							// Send command to dose.
-							var disp_cmd = "disp " + data.pump_num[data.phase] + " " + data.ml_per_iter;
-							utils.queue_and_send_instr_cmd( dosing, disp_cmd, 
-								function(dosing_status) { // Success
-									data.is_active = true;
-									data.interval_remaining = settings.inter_interval_sec;
-									data.dosed[data.phase] += data.ml_per_iter;
-									data.phase++;
-									if (data.phase >= data.num_phases) {
-										data.phase = 0;
-									}
-									if (data.dosed[data.num_phases-1] >= data.ml_per_day) {
-										// Done.
-										data.is_active = false;
-										logDosing(data);
-									} else if (settings.debug) {
-										console.log("DOSING: Finished "+data.dosed+" of "+data.ml_per_day+"ml");
-									}
-									scheduleIter(data,settings);
-								},
-								function(error) { // Failure
-									scheduleIter(data,settings,true);
-									if (!data.is_active) {
-										logDosing( data, error );
-									}
-								}
-							);
-
-
-						} else {
-							scheduleIter(data,settings,false);
-							if (data.is_active) {
-								data.is_active = false;
-								// INCOMPLETE: log.
-							}
-						}
-					}, function(error) {dosingCommsFailure( data, settings, error );} 
-				);
+		if (hour == 0) {
+			// Reset for the day.
+			for ( i=0; i < data.num_phases; i++ ) {
+				data.dosed[i] = 0;
 			}
-		}, function(error) {dosingCommsFailure( data, settings, error );}
-	);
+			data.phase = 0;
+			data.started = false;
+			data.is_active = false;
+			scheduleIter(data,false);
+			return;
+		}
+
+		if (   (!data.started && ((hour < data.start_time[0]) || (min < data.start_time[1])))
+			|| (data.dosed[data.num_phases-1] >= data.ml_per_day) ) {
+			// Either not time to start, or already done.
+			data.is_active = false;
+			scheduleIter(data,false);
+			return;
+		}
+		data.started = true;
+
+		// If we get here, its time to start, and we're not yet done.
+		// Get the dosing status, judge if we can start the next phase,
+		// then get the stand status, and if OK, do a dose.
+		utils.queue_and_send_instr_cmd( dosing, "stat", 
+			function(dosing_status) { // Success
+
+				// If currently dosing, or in an interval,
+				//  or dosing_ok() is false, come back.
+				if (     (dosing_status.num_active > 0)
+					  || (data.interval_remaining > 0)
+					  || !data.dosing_ok(data,dosing_status)) {
+					if (dosing_status.num_active == 0) {
+						if (data.interval_remaining < data.active_interval_sec) {
+							data.is_active = false; // Go to inactive if already past interval.
+						} else {
+							data.interval_remaining -= data.active_interval_sec;
+						}
+					}
+					scheduleIter(data,false);
+				} else {
+
+					// Get stand status 
+					utils.queue_and_send_instr_cmd( stand, "stat", 
+						function(stand_status) { // Success
+							if ( data.stand_ok_for_dosing(data,stand_status)) {
+								if (data.dosed[0] == 0) {
+									data.is_active = true;
+									logDosing(data);
+								}
+								// Send command to dose.
+								var disp_cmd = "disp " + data.pump_num[data.phase] + " " + data.ml_per_iter;
+								utils.queue_and_send_instr_cmd( dosing, disp_cmd, 
+									function(dosing_status) { // Success
+										data.is_active = true;
+										data.interval_remaining = data.inter_interval_sec;
+										data.dosed[data.phase] += data.ml_per_iter;
+										data.phase++;
+										if (data.phase >= data.num_phases) {
+											data.phase = 0;
+										}
+										if (data.dosed[data.num_phases-1] >= data.ml_per_day) {
+											// Done.
+											data.is_active = false;
+											logDosing(data);
+										} else if (data.debug) {
+											console.log("DOSING: Finished "+data.dosed+" of "+data.ml_per_day+"ml");
+										}
+										scheduleIter(data);
+									},
+									function(error) { // Failure
+										scheduleIter(data,true);
+										if (!data.is_active) {
+											logDosing( data, error );
+										}
+									}
+								);
+
+
+							} else {
+								scheduleIter(data,false);
+								if (data.is_active) {
+									data.is_active = false;
+									// INCOMPLETE: log.
+								}
+							}
+						}, function(error) {dosingCommsFailure( data, error );} 
+					);
+				}
+			}, function(error) {dosingCommsFailure( data, error );}
+		);
+	});
 }
 
 
@@ -368,16 +426,16 @@ function dosingTask( data ) {
 //
 // Initializes data on first call, utilizing knowledge that its the first time to reset.
 //
-function scheduleIter( data, settings, isRetry ) {
+function scheduleIter( data, isRetry ) {
 
 	var isFirst = Boolean(!data.initialized);
 
-	settings.init_data(data);
+	data.init_data();
 
 	if (!data.waiting) {
 		// Interlock against double-dispatch.
-		if (settings.debug) {
-			console.log(settings.label+": "+data.target_instr_name+": Ignoring event because not waiting.");
+		if (data.debug) {
+			console.log("MON: "+data.label+": "+data.target_instr_type+": Ignoring event because not waiting.");
 		}
 		return;
 	}
@@ -388,24 +446,24 @@ function scheduleIter( data, settings, isRetry ) {
 	if (isRetry == true) {
 		data.retries_left--;
 		if (data.retries_left <= 0) {
-			data.retries_left = settings.num_retries;
+			data.retries_left = data.num_retries;
 			data.is_active = false;
-			if (settings.debug) {
-				console.log(settings.label+": "+data.target_instr_name+": Exhausted "+settings.num_retries+" retries.");
+			if (data.debug) {
+				console.log("MON: "+data.label+": "+data.target_instr_type+": Exhausted "+data.num_retries+" retries.");
 			}
 			timedOut = true;
 		}
 	}
 	var interval = (data.enabled && (data.is_active || isFirst))
-		? settings.active_interval_sec 
+		? data.active_interval_sec 
 		: (timedOut) 
-			? settings.post_timeout_interval_sec
-			: settings.watching_interval_sec;
+			? data.post_timeout_interval_sec
+			: data.watching_interval_sec;
 		
-	if (settings.debug > 1) {
-		console.log(settings.label+": "+data.target_instr_name+": enabled="+data.enabled+", active="+data.is_active+", wait for "+interval+" sec");
+	if (data.debug > 1) {
+		console.log("MON: "+data.label+": "+data.target_instr_type+": enabled="+data.enabled+", active="+data.is_active+", wait for "+interval+" sec");
 	}
-	setTimeout( function() {settings.exec_task(data);}, interval*1000 );
+	setTimeout( function() {data.exec_task(data);}, interval*1000 );
 }
 
 function timestamp() {
@@ -415,7 +473,7 @@ function timestamp() {
 
 function logFilling( data, error ) {
 	var startStop = data.is_active?"Started ":"Stopped ";
-	var msg = "TOPUP: "+data.target_instr_name+": "+timestamp()+": "+startStop;
+	var msg = "TOPUP: "+data.target_instr_type+": "+timestamp()+": "+startStop;
 	if (data.time_filling > 0) {
 		msg += ": "+data.time_filling+" sec";
 	}
@@ -436,18 +494,18 @@ function logDosing( data, error ) {
 
 
 // If failure to send command to either unit, reschedule, and possibly end as exhausted.
-function topupCommsFailure(data,settings,error) {
+function topupCommsFailure(data,error) {
 	var wasActive = data.is_active;
-	scheduleIter(data,settings,true);
+	scheduleIter(data,true);
 	if (wasActive && !data.is_active) {
 		logFilling( data, error ); // retries exhausted.
 	}
 }
 
 // If failure to send command to either unit, reschedule, and possibly end as exhausted.
-function dosingCommsFailure(data,settings,error) {
+function dosingCommsFailure(data,error) {
 	var wasActive = data.is_active;
-	scheduleIter(data,settings,true);
+	scheduleIter(data,true);
 	if (wasActive && !data.is_active) {
 		logDosing( data, error ); // retries exhausted.
 	}
@@ -458,7 +516,7 @@ function dosingCommsFailure(data,settings,error) {
 // then returns false until the float sw closes again.
 // Also requires that it be daytime if daytime_only is set.
 function ro_fill_ok(data,status) {
-	if (topup_settings.daytime_only && !data.utils.is_daytime()) {
+	if (data.daytime_only && !data.utils.is_daytime()) {
 		return false;
 	}
 
@@ -474,7 +532,7 @@ function ro_fill_ok(data,status) {
 			// Something's wrong.  No data.
 			return false;
 		}
-		if (status.res_lev >= topup_settings.ro_min_level) {
+		if (status.res_lev >= data.ro_min_level) {
 			data.res_recovering = true;
 			return false;
 		} else {
