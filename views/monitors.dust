@@ -1,0 +1,63 @@
+{>"master" /}
+{<title}: Monitors{/title}
+{<bodyContent}
+<input type=hidden id=instr_name value={instr_name} />
+<div class="container-fluid outer-container">
+	<div class="container title_row">
+		<table width=100%><tr>
+		<td width=90%><h3>Monitors</h3></td>
+		<td> <div class="checkbox checkbox-primary">
+				<input id="monitor_cb" type="checkbox" checked="">
+				<label style="padding: 0px;">Monitor</label>
+			</div>
+		</td>
+		</tr></table>
+	</div><!--container-->
+	<div class="container-fluid">
+		<div class="row">
+			<!-- ATO settings -->
+			<div class="col-xs-12 col-sm-6">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>ATO</h2>
+				 </div>
+				 <div class="x_content">
+					<div class="row">
+						<div class="col-xs-12">
+							<table class="x_table" width=100%>
+							<tr class=x_row_emphasize>
+								<td class="w_30">Thing 1</td>
+								<td id=target_temp>
+									<div class="input-group input-group-sm">
+										<input type="text" class="form-control" placeholder="TargetTemp" id=targetTemp>
+										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setTargetTemp" onclick='temp.setTargetTemp(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
+									</div><!-- /input-group -->
+								</td>
+							</tr>
+							<tr class=x_row_deemphasize>
+								<td class="w_30">Thing 2</td>
+								<td id=sample>
+									<div class="input-group input-group-sm">
+										<input type="text" class="form-control" placeholder="Sample period" id=samplePeriod>
+										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setSamplePeriod" onclick='temp.setSamplePeriod(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
+									</div><!-- /input-group -->
+								</td>
+							</tr>
+							</table>
+						</div>
+					</div>
+				 </div>
+				</div>
+			</div><!--col-->
+		</div><!--row-->
+	</div><!--container-->
+	<div class="container" >
+		<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
+		 <table><tr>
+			 <td><p/></td>
+			 <td><button type="button" aria-hidden="true" onclick="temp.clearError()">&times;</button></td>
+		</tr></table>
+		</div>
+	</div>
+</div><!--container-->
+{/bodyContent}
