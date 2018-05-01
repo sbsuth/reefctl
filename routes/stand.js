@@ -17,7 +17,7 @@ router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?/:arg4?', function(
 				+ ((req.params.arg3 != undefined) ? " "+req.params.arg3 : "")
 				+ ((req.params.arg4 != undefined) ? " "+req.params.arg4 : "")
 	var instr_name = req.params.instr_name;
-	var instr = utils.get_instr_by_name(ession.instruments,instr_name);
+	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "stand \'"+instr_name+"\' unknown.");
 		return;
