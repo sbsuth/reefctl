@@ -225,7 +225,7 @@ function topupTask( data ) {
 		if (err) {
 			console.log("MON: ERROR: Failed reading settings for \'"+data.name+"\' during iter.");
 		}
-		if (monitor_obj && monitor_obj.length) {
+		if (monitor_obj && (monitor_obj.length > 0)) {
 			Object.assign( data, monitor_obj[0] );
 		}
 
@@ -276,6 +276,20 @@ function topupTask( data ) {
 	});
 }
 
+// Store the fields that record current status.
+// This will be re-read every time we take up so its OK to go down and back up again.
+function writeDosingData( data ) {
+	var monitors = data.utils.db.get('monitors');
+	monitors.update( {system: data.system_name, name: data.name} , 
+					 {$set: {	started: data.started,
+								dosed:	 data.dosed }},
+					 function( err ) {
+						if (err) {
+							console.log("MON: ERROR: Failed writing status for \'"+data.name+"\' during iter.");
+						}
+					 } );
+}
+
 function dosingTask( data ) {
 
 	var utils = data.utils;
@@ -301,13 +315,13 @@ function dosingTask( data ) {
 	// Refresh data.
 	data.utils.db.get('monitors').find( 
 		{name: data.name, system: data.system_name}, 
-		"-started -dosed -_id", 
+		"-_id", 
 		function( err, monitor_obj ) {
 
 		if (err) {
 			console.log("MON: ERROR: Failed reading settings for \'"+data.name+"\' during iter.");
 		}
-		if (monitor_obj && monitor_obj.length) {
+		if (monitor_obj && (monitor_obj.length > 0)) {
 			Object.assign( data, monitor_obj[0] );
 		}
 
@@ -330,6 +344,7 @@ function dosingTask( data ) {
 			data.phase = 0;
 			data.started = false;
 			data.is_active = false;
+			writeDosingData(data);
 			scheduleIter(data,false);
 			return;
 		}
@@ -390,6 +405,7 @@ function dosingTask( data ) {
 										} else if (data.debug) {
 											console.log("DOSING: Finished "+data.dosed+" of "+data.ml_per_day+"ml");
 										}
+										writeDosingData(data);
 										scheduleIter(data);
 									},
 									function(error) { // Failure
