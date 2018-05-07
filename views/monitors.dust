@@ -1,7 +1,7 @@
 {>"master" /}
 {<title}: Monitors{/title}
 {<bodyContent}
-<input type=hidden id=instr_name value={instr_name} />
+<input type=hidden id=system_name value={system_name} />
 <div class="container-fluid outer-container">
 	<div class="container title_row">
 		<table width=100%><tr>
@@ -15,40 +15,46 @@
 	</div><!--container-->
 	<div class="container-fluid">
 		<div class="row">
-			<!-- ATO settings -->
+
+			{#monitors}
 			<div class="col-xs-12 col-sm-6">
 				<div class="x_panel">
 				 <div class="x_title">
-					<h2>ATO</h2>
+					<table width=100%><tr>
+					  <td ><h2>{label}</h2></td>
+					  <td class="monitor_enabled"><input id=monitor-enabled-{name}-bool type="checkbox" data-group-cls="btn-group-sm" ></td>
+					</tr></td></table>
 				 </div>
 				 <div class="x_content">
 					<div class="row">
-						<div class="col-xs-12">
+						<div class="col-xs-7">
 							<table class="x_table" width=100%>
-							<tr class=x_row_emphasize>
-								<td class="w_30">Thing 1</td>
-								<td id=target_temp>
-									<div class="input-group input-group-sm">
-										<input type="text" class="form-control" placeholder="TargetTemp" id=targetTemp>
-										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setTargetTemp" onclick='temp.setTargetTemp(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
-									</div><!-- /input-group -->
-								</td>
-							</tr>
-							<tr class=x_row_deemphasize>
-								<td class="w_30">Thing 2</td>
-								<td id=sample>
-									<div class="input-group input-group-sm">
-										<input type="text" class="form-control" placeholder="Sample period" id=samplePeriod>
-										<span class="input-group-btn"> <button class="btn btn-default" type="button" id="setSamplePeriod" onclick='temp.setSamplePeriod(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
-									</div><!-- /input-group -->
-								</td>
-							</tr>
+							{#view_settings}
+								<tr class=x_row>
+									<td class="w_30">{label}</td>
+									<td id=target_temp>
+										<div class="input-group input-group-sm">
+											<input type="text" class="form-control" placeholder="TargetTemp" id=monitor-{field}-{name}-{type}>
+											<span class="input-group-btn"> <button class="btn btn-default" type="button" id="monitor-{field}-{name}-{type}-button" onclick='monitors.setValue(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
+										</div><!-- /input-group -->
+									</td>
+								</tr>
+							{/view_settings}
+							</table>
+						</div>
+						<div class="col-xs-5">
+							<table class="x_table" width=100%>
+							{#view_status}
+								<tr class=x_row><td >{label}:</td><td><p id=monitor-{field}-{name}-{type}>(pending)</p></td></tr>
+							{/view_status}
 							</table>
 						</div>
 					</div>
 				 </div>
 				</div>
 			</div><!--col-->
+			{/monitors}
+
 		</div><!--row-->
 	</div><!--container-->
 	<div class="container" >

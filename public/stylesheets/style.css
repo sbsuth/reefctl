@@ -166,6 +166,12 @@ body {
 .w_60 {
     width: 60%;
 }
+.w_65 {
+    width: 65%;
+}
+.w_70 {
+    width: 70%;
+}
 .w_75 {
     width: 75%;
 }
@@ -185,3 +191,6 @@ body {
     width: 100%;
 }
 
+.monitor_enabled {
+	width: 25%;
+}

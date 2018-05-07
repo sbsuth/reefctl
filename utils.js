@@ -57,6 +57,8 @@ var instr_routes = [];
 var instr_mod_names = [];
 var instr_mods = [];
 
+// Monitors
+var monitors = {};
 
 function load_instr_mods()
 {
@@ -480,6 +482,51 @@ function is_daytime() {
 	}
 }
 
+// Stores the given monitor, indexed by system naem and name.
+function register_monitor( monitor ) {
+	var key = monitor.system_name + "." + monitor.name;
+	monitors[key] = monitor;
+}
+
+// Copies the given monitor object, and removes some fields that
+// are either big, or are recursive.
+function strip_monitor(mon) 
+{
+	var unwanted = ['instrs', 'utils', '_id', 'exec_task'];
+	var newMon = {};
+	Object.keys(mon).forEach( function(key) {
+		if ( unwanted.indexOf(key) == -1) {
+			newMon[key] = mon[key];
+		}
+	});
+	return newMon;
+}
+
+// Returns a monitor for the given system_name and name.
+function get_monitor( system_name, monitor_name, stripped ) {
+	var key = system_name + "." + monitor_name;
+	var mon = monitors[key];
+	if (stripped && (mon != undefined)) {
+		mon = strip_monitor(mon);
+	}
+	return mon;
+}
+
+// Returns all monitors for the given system.
+function get_monitors( system_name, stripped ) {
+	var rslt = [];
+	Object.keys(monitors).forEach( function(key) {
+		if (key.split('.')[0] == system_name) {
+			var mon = monitors[key];
+			if (stripped) {
+				mon = strip_monitor(mon);
+			}
+			rslt.push(mon);
+		}
+	});
+	return rslt;
+}
+
 module.exports = {
 	init_dust_helpers: function( dust_in ) {
 		dust = dust_in;
@@ -502,5 +549,8 @@ module.exports = {
 	send_instr_cmd: send_instr_cmd,
 	instr_cmd_done: instr_cmd_done,
 	default_instruments: default_instruments,
-	is_daytime: is_daytime
+	is_daytime: is_daytime,
+	register_monitor: register_monitor,
+	get_monitor: get_monitor,
+	get_monitors: get_monitors
 };

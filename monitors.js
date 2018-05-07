@@ -132,6 +132,9 @@ function start_monitor( monitor, system, utils ) {
 		console.log("MON: "+monitor.label+": Starting");
 	}
 
+	// Register the monitor.
+	utils.register_monitor( monitor );
+
 	scheduleIter(monitor);
 
 }
@@ -194,6 +197,7 @@ function initDosingData() {
 	if (!initData(data)) {
 		return;
 	}
+	data.dosed = [0,0];
 }
 	
 function topupTask( data ) {
@@ -325,18 +329,12 @@ function dosingTask( data ) {
 			Object.assign( data, monitor_obj[0] );
 		}
 
-		// If disabled, do nothing, but check if enabled in a while.
-		if (!data.enabled) {
-			scheduleIter(data,false);
-			return;
-		}
-
 		var i;
 		var d = new Date();
 		var hour = d.getHours(); // Midnight is 0.
 		var min = d.getMinutes();
 
-		if (hour == 0) {
+		if ((hour == 0) && data.started) {
 			// Reset for the day.
 			for ( i=0; i < data.num_phases; i++ ) {
 				data.dosed[i] = 0;
@@ -348,6 +346,13 @@ function dosingTask( data ) {
 			scheduleIter(data,false);
 			return;
 		}
+
+		// If disabled, do nothing, but check if enabled in a while.
+		if (!data.enabled) {
+			scheduleIter(data,false);
+			return;
+		}
+
 
 		if (   (!data.started && ((hour < data.start_time[0]) || (min < data.start_time[1])))
 			|| (data.dosed[data.num_phases-1] >= data.ml_per_day) ) {
