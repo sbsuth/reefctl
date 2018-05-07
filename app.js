@@ -16,6 +16,7 @@ var users = require('./routes/users');
 var test = require('./routes/test')
 var dashboard = require('./routes/dashboard')
 var login = require('./routes/login')
+var monitors_routes = require('./routes/monitors_routes');
 
 var app = express();
 
@@ -78,6 +79,7 @@ app.use('/users', users);
 app.use('/test', test);
 app.use('/', dashboard.router);
 app.use('/', login.router);
+app.use('/', monitors_routes.router);
 
 utils.setup_instr_routes( app );
 
