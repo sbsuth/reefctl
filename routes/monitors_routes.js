@@ -10,9 +10,9 @@ function decode_value( str, type ) {
 	var err = undefined;
 	switch (type) {
 		case "bool":
-			if ((value == "1") || (value == "true")) {
+			if ((str == "1") || (str == "true")) {
 				value = true;
-			} else if ((value == "0") || (value == "false")) {
+			} else if ((str == "0") || (str == "false")) {
 				value = false;
 			} else {
 				err = "Must specify true, false, 1, or 0";
@@ -30,20 +30,23 @@ function decode_value( str, type ) {
 				err = "Must specify real number";
 			}
 			break;
+		case 'str':
+			value = str;
+			break;
 		case 'tod':
 			// Value is [hour,min], format is hour:min
 			var vals = str.split(":");
-			if ((vals.length != 2) || !Number.isInteger(vals[0]) || !Number.isInteger(vals[1])) {
+			if (vals.length != 2)  {
 				err = "Must specify \'hour:min\'";
 			} else {
 				var hour = Number.parseInt(vals[0]);
 				var min = Number.parseInt(vals[1]);
-				if ((hour < 0) || (hour > 23)) {
+				if ( Number.isNaN(hour) || (hour < 0) || (hour > 23)) {
 					err = "Hours must be from 0-23.";
-				} else if ((min < 0) || (min > 59)) {
+				} else if ( Number.isNaN(hour) || (min < 0) || (min > 59)) {
 					err = "Minutes must be from 0-59."
 				} else {
-					value = [hour,,min];
+					value = [hour,min];
 				}
 			}
 			break;
@@ -159,6 +162,7 @@ router.get('/monitors/:system_name/', function(req, res) {
 	// They'll get merged into the monitors for access in the view.
 	var controls = {
 		ato: {
+			order: 0,
 			view_settings: [
 				{	label: "Pump Num",
 					field: "pump_num",
@@ -170,60 +174,16 @@ router.get('/monitors/:system_name/', function(req, res) {
 				},
 			],
 			view_status: [
+				{	label: "Full",
+					field: "target_full",
+					type:  "bool"
+				},
+				{	label: "Sump Level",
+					field: "target_lev",
+					type:  "int"
+				},
 				{	label: "Active",
 					field: "is_active",
-					type:  "bool"
-				},
-				{	label: "Time Filling",
-					field: "time_filling",
-					type:  "int"
-				},
-			]
-		},
-		manual_tank_fill: {
-			view_settings: [
-				{	label: "Pumpt Num",
-					field: "pump_num",
-					type:  "int"
-				},
-				{	label: "Debug",
-					field: "debug",
-					type:  "bool"
-				},
-			],
-			view_status: [
-				{	label: "Active",
-					field: "is_active",
-					type:  "bool"
-				},
-				{	label: "Recovering",
-					field: "res_recovering",
-					type:  "bool"
-				},
-				{	label: "time filling",
-					field: "time_filling",
-					type:  "int"
-				},
-			]
-		},
-		salt_res_fill: {
-			view_settings: [
-				{	label: "Pump Num",
-					field: "pump_num",
-					type:  "int"
-				},
-				{	label: "Debug",
-					field: "debug",
-					type:  "bool"
-				},
-			],
-			view_status: [
-				{	label: "Active",
-					field: "is_active",
-					type:  "bool"
-				},
-				{	label: "Recovering",
-					field: "res_recovering",
 					type:  "bool"
 				},
 				{	label: "Time Filling",
@@ -233,6 +193,7 @@ router.get('/monitors/:system_name/', function(req, res) {
 			]
 		},
 		water_change: {
+			order: 1,
 			view_settings: [
 				{	label: "Start Time",
 					field: "start_time",
@@ -256,6 +217,10 @@ router.get('/monitors/:system_name/', function(req, res) {
 				},
 			],
 			view_status: [
+				{	label: "Res Level",
+					field: "res_lev",
+					type:  "int"
+				},
 				{	label: "Active",
 					field: "is_active",
 					type:  "bool"
@@ -265,46 +230,86 @@ router.get('/monitors/:system_name/', function(req, res) {
 					type:  "str"
 				},
 			]
-		}
+		},
+		salt_res_fill: {
+			order: 2,
+			view_settings: [
+				{	label: "Pump Num",
+					field: "pump_num",
+					type:  "int"
+				},
+				{	label: "Debug",
+					field: "debug",
+					type:  "bool"
+				},
+			],
+			view_status: [
+				{	label: "Full",
+					field: "target_full",
+					type:  "bool"
+				},
+				{	label: "Res Level",
+					field: "target_lev",
+					type:  "int"
+				},
+				{	label: "Active",
+					field: "is_active",
+					type:  "bool"
+				},
+				{	label: "Recovering",
+					field: "res_recovering",
+					type:  "bool"
+				},
+				{	label: "Time Filling",
+					field: "time_filling",
+					type:  "int"
+				},
+			]
+		},
+		manual_tank_fill: {
+			order: 3,
+			view_settings: [
+				{	label: "Pump Num",
+					field: "pump_num",
+					type:  "int"
+				},
+				{	label: "Debug",
+					field: "debug",
+					type:  "bool"
+				},
+			],
+			view_status: [
+				{	label: "Sump Level",
+					field: "target_lev",
+					type:  "int"
+				},
+				{	label: "Active",
+					field: "is_active",
+					type:  "bool"
+				},
+				{	label: "Recovering",
+					field: "res_recovering",
+					type:  "bool"
+				},
+				{	label: "Time Filling",
+					field: "time_filling",
+					type:  "int"
+				},
+			]
+		},
 	};
-// ,"name":"salt_res_fill"
-// ,"enabled":false
-// ,"pump_num":1
-// ,"debug":2
-// ,"is_active":0
-// ,"time_filling":0
-// ,"res_recovering":false}
-// 
-// ,"name":"manual_tank_fill"
-// ,"enabled":false
-// ,"pump_num":1
-// ,"debug":2
-// ,"is_active":0
-// ,"time_filling":0
-// ,"res_recovering":false}
-// 
-// ,"name":"water_change"
-// ,"enabled":false
-// ,"start_time":[12,0]
-// ,"dosed":[500,400]
-// ,"ml_per_iter":100
-// ,"ml_per_day":2500
-// ,"pump_num":[3,4]
-// ,"phase":0
-// ,"inter_interval_sec":0
-// ,"debug":2
-// ,"is_active":0
 
 	get_monitors( utils, system_name, function( err, monitor_objs ) {
 		if (err == undefined) {
 			var d = utils.get_master_template_data(req);
 			d.load_javascript.push( "/js/monitors.c.js" );
 			d.system_name = system_name;
-			d.monitors = monitor_objs;
-			for (var imon=0; imon < d.monitors.length; imon++ ) {
-				var mon = d.monitors[imon];
+			for (var imon=0; imon < monitor_objs.length; imon++ ) {
+				var mon = monitor_objs[imon];
 				Object.assign( mon, controls[mon.name] );
 			}
+			monitor_objs.sort( function(a,b) { return a.order > b.order; } );
+			d.monitors = monitor_objs;
 			d.controls = controls;
 			res.render("monitors", d );
 		} else {

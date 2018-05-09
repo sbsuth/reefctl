@@ -1,5 +1,5 @@
 
-var monitors = new PageUtils( 1, "MONITORS", 0, 0 );
+var monitors = new PageUtils( 1, "MONITORS", 60000, 60000 );
 	
 // Format is monitor-<field>-<monitor_name>-<type>
 // Name may have u
@@ -12,6 +12,14 @@ function decode_id(id) {
 }
 function encode_id(monitor,field,type) {
 	return "monitor-"+field+"-"+monitor+"-"+type;
+}
+
+// Strip the last token off the given dash-separated ID.
+function strip_last_token( id  ) {
+	var segs = id.split('-');
+	segs.pop();
+	id = segs.join('-');
+	return id;
 }
 
 // Returns a string given a typed value and a type.
@@ -47,19 +55,18 @@ function decode_value( str, type ) {
 	var err = undefined;
 	switch (type) {
 		case "bool":
-			if ((value == "1") || (value == "true")) {
+			if ((str == "1") || (str == "true")) {
 				value = true;
-			} else if ((value == "0") || (value == "false")) {
+			} else if ((str == "0") || (str == "false")) {
 				value = false;
 			} else {
 				err = "Must specify true, false, 1, or 0";
 			}
 			break;
 		case "int":
-			if (Number.isInteger(str)) {
-				value = Number.parseInt(str);
-			} else {
-				err = "Must specify an integer";
+			value = Number.parseInt(str);
+			if (Number.isNaN(value)) {
+				err = "Must specify an integer.";
 			}
 			break;
 		case 'real':
@@ -74,17 +81,17 @@ function decode_value( str, type ) {
 		case 'tod':
 			// Value is [hour,min], format is hour:min
 			var vals = str.split(":");
-			if ((vals.length != 2) || !Number.isInteger(vals[0]) || !Number.isInteger(vals[1])) {
+			if (vals.length != 2) {
 				err = "Must specify \'hour:min\'";
 			} else {
 				var hour = Number.parseInt(vals[0]);
 				var min = Number.parseInt(vals[1]);
-				if ((hour < 0) || (hour > 23)) {
+				if ( Number.isNaN(hour) || (hour < 0) || (hour > 23)) {
 					err = "Hours must be from 0-23.";
-				} else if ((min < 0) || (min > 59)) {
+				} else if ( Number.isNaN(hour) || (min < 0) || (min > 59)) {
 					err = "Minutes must be from 0-59."
 				} else {
-					value = [hour,,min];
+					value = [hour,min];
 				}
 			}
 			break;
@@ -106,7 +113,7 @@ monitors.updateStatus = function ()
 		return;
 	}
 	page.waiting_status = 1;
-	page.debugMsg("Sending stand status");
+	page.debugMsg("Sending monitor status query");
 	$.getJSON( '/monitors_status/'+page.system_name, function(data) { page.handleStatus( data ) } );
 }
 
@@ -116,7 +123,7 @@ monitors.handleStatus = function ( data ) {
 	var page = this;
 
 	if (data.error === undefined) {
-		page.debugMsg("Got monitor status: "+JSON.stringify(data));
+		page.debugMsg("Got monitor status: length="+data.monitors.length);
 		
 		page.goodUpdate();
 	} else if (data.error == 429) {
@@ -196,7 +203,6 @@ monitors.sendSetting = function (event,monitor,setting,value,type,successFunc) {
 monitors.setValue = function(event) {
 	var page = this;
 
-console.log("HEY: A");
 	if (page.ignore_changes) {return;}
 
 	// Name of the button same as field to set with a -button suffix.
@@ -204,10 +210,7 @@ console.log("HEY: A");
 	while (!elem.id) {
 		elem = elem.parentNode;
 	}
-	var id = elem.id;
-	var segs = id.split('-');
-	segs.pop();
-	var val_id = segs.join('-');
+	var val_id = strip_last_token(elem.id);
 	var id_info = decode_id(val_id);
 	var value = $('#'+val_id).val();
 	page.sendSetting(  event, id_info.monitor, id_info.field, value, id_info.type );
@@ -254,6 +257,19 @@ $(document).ready(function() {
 
     // button events
     enable_cbs.on('change', {page: page}, monitors.switchChange);
+
+	// handle enter in each edit to an associated push button.
+	// The  buttons have -button at the end.
+	var buttons = $("[id$='-button']");
+	for ( var i=0; i < buttons.length; i++ ) {
+		var button = buttons[i];
+		var val_id = strip_last_token(button.id);
+		$("#"+val_id).keyup(function(event) {
+		    if (event.keyCode === 13) {
+				$("#"+event.target.id+"-button").click();
+			}
+		});
+	}
 
 	page.setupStandard(page);
 	page.updateStatus();

@@ -45,6 +45,8 @@ function create_monitor_types()
 		label: "ATO",
 		target_instr_type: "sump_level",
 		target_fill_ok: function(data,status) {
+			data.target_lev = status.sump_lev;
+			data.target_full = !status.sump_sw;
 			return Boolean(status.sump_sw && (status.sump_lev > 8));
 		},
 	};
@@ -59,6 +61,8 @@ function create_monitor_types()
 		label: "Salt Res Fill",
 		target_instr_type: "salt_res",
 		target_fill_ok: function(data,status) {
+			data.target_lev = status.dist;
+			data.target_full = status.float_sw;
 			return Boolean(!status.float_sw && (status.dist > 5));
 		},
 	};
@@ -73,6 +77,8 @@ function create_monitor_types()
 		label: "Manual Tank Fill",
 		target_instr_type: "sump_level",
 		target_fill_ok: function(data,status) {
+			data.target_lev = status.sump_lev;
+			data.target_full = false;
 			// Always OK.  Must watch!
 			return true;
 		},
@@ -189,6 +195,8 @@ function initTopupData() {
 	}
 	data.time_filling = 0;
 	data.res_recovering = false; // Hit low, refilling.
+	data.target_lev = -1;
+	data.target_full = false;
 }
 
 // Initialize missing fields in dosing data.
@@ -244,6 +252,7 @@ function topupTask( data ) {
 			function(target_status) { // Success
 				utils.queue_and_send_instr_cmd( ro_res, "stat", 
 					function(ro_status) { // Success
+						data.ro_lev = ro_status.res_lev;
 						if (   data.target_fill_ok(data,target_status)
 							&& data.ro_fill_ok(data,ro_status)) {
 							// Turn on the pump for twice our interval, so we will refresh until its filled.
@@ -334,7 +343,7 @@ function dosingTask( data ) {
 		var hour = d.getHours(); // Midnight is 0.
 		var min = d.getMinutes();
 
-		if ((hour == 0) && data.started) {
+		if ((hour == 0) && (data.started || (data.dosed[0] > 0))) {
 			// Reset for the day.
 			for ( i=0; i < data.num_phases; i++ ) {
 				data.dosed[i] = 0;
@@ -368,6 +377,8 @@ function dosingTask( data ) {
 		// then get the stand status, and if OK, do a dose.
 		utils.queue_and_send_instr_cmd( dosing, "stat", 
 			function(dosing_status) { // Success
+
+				data.res_lev = dosing_status.dist;
 
 				// If currently dosing, or in an interval,
 				//  or dosing_ok() is false, come back.
