@@ -1,5 +1,6 @@
 
 var powerheads = new PageUtils( 1, "POWERHEADS", 2000, 20000, 0 );
+var pumps = powerheads;
 
 
 // Begins a periodic query for powerhead status.
@@ -52,10 +53,10 @@ powerheads.updateSettings = function( ph, values ) {
 	controls[0].input.val( values.mode );
 	controls[1].input.val( values.top_speed );
 	controls[2].input.val( values.slow_speed );
-	controls[3].input.val( values.hold_sec );
-	controls[4].input.val( values.hold_range );
-	controls[5].input.val( values.ramp_sec );
-	controls[6].input.val( values.ramp_range );
+	if (controls[3]) { controls[3].input.val( values.hold_sec ); }
+	if (controls[4]) {controls[4].input.val( values.hold_range ); }
+	if (controls[5]) {controls[5].input.val( values.ramp_sec ); }
+	if (controls[6]) {controls[6].input.val( values.ramp_range ); }
 }
 
 // Return a clone of the data without the non-settings fields.
@@ -278,8 +279,10 @@ powerheads.enable_controls = function( index ) {
 	for ( var i=1; i < 7; i++ ) {
 		var disabled = Boolean((enable == undefined) || (enable.indexOf(i) < 0));
 		var cell = page.controls[index][i];
-		cell.input.prop('disabled',disabled);
-		cell.button.prop('disabled',disabled);
+		if (cell != undefined) {
+			cell.input.prop('disabled',disabled);
+			cell.button.prop('disabled',disabled);
+		}
 	}
 }
 
@@ -342,7 +345,8 @@ $(document).ready(function() {
 	page.last_settings = ["",""];;
 	page.mode_controls = [0,3,4,5,6];
 	page.mode_names = ["Constant","Slow","Square","Ramp","Off","Test","Sin"];
-	page.i_pstat = [2,3]; // Indexes in pump status array for each powerhead.
+
+	page.i_pstat = []; // Indexes in pump status array for each powerhead.
 
 	var instr_elem = $( '#instr_name' )[0];
 	if (instr_elem == undefined) {
@@ -360,6 +364,12 @@ $(document).ready(function() {
 		var ctrls = new Array();
 		page.controls.push(ctrls);
 		page.changed_controls.push( new Array() );
+
+		// Store the pump nums stored in pump_num_<index> controls.
+		var pump_num_ctrl = $("#pump_num_"+i);
+		var pump_num = pump_num_ctrl.val();
+		page.i_pstat.push( pump_num );
+		
 		// Use the values of the '<id>_row_<index>' hidden inputs to get a list of names.
 		$("[id$=row_"+i+"]").each( function() { 
 			var name = $(this).val();

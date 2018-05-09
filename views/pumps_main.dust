@@ -1,11 +1,11 @@
 {>"master" /}
-{<title}: Powerheads{/title}
+{<title}: Pumps{/title}
 {<bodyContent}
 <input type=hidden id=instr_name value={instr_name} />
 <div class="container-fluid outer-container">
 	<div class="container title_row">
 		<table width=100%><tr>
-		<td width=90%><h3>Powerheads</h3></td>
+		<td width=90%><h3>Pumps</h3></td>
 		<td> <div class="checkbox checkbox-primary">
 				<input id="monitor_cb" type="checkbox" checked="">
 				<label style="padding: 0px;">Monitor</label>
@@ -26,8 +26,9 @@
 						<div class="col-xs-12 col-md-6">
 						  <table width=100%>
 							{#indexes}
+							  <input type=hidden id=pump_num_{index} value={pump} />
 							  <tr class=x_row>
-								<td class="w_5 row_label" ><p>#{@math key=index method="add" operand="1"/}:</p></td>
+								<td class="w_5 row_label" ><p>{label}:</p></td>
 								<td class="w_5 row_label" ><p id=curSpeed_{index}>XXX%</p></td>
 								<td class="w_90">
 								<div class="progress">
@@ -55,12 +56,12 @@
 				</div>
 			</div><!--col-->
 
-			<!-- Powerhead control -->
+			<!-- Pump control -->
 		  {#indexes}
 			<div class="col-xs-12 col-md-6">
 				<div class="x_panel">
 				 <div class="x_title">
-					<h2>Powerhead #{@math key=index method="add" operand="1"/} Settings</h2>
+					<h2>{label} Settings</h2>
 				 </div>
 				 <div class="x_content">
 					<div class="row">
@@ -73,20 +74,18 @@
 										<td>
 											<div class="input-group input-group-sm" id={id}_item_{index}>
 											  {@eq key=kind value="edit"}
-												<input  id={id}_{index} type="text" class="form-control" placeholder="{label}" onchange='powerheads.onControlChanged({i},{index})'">
+												<input  id={id}_{index} type="text" class="form-control" placeholder="{label}" onchange='pumps.onControlChanged({i},{index})'">
 											  {/eq}
 											  {@eq key=kind value="mode_combo"}
-												<select id={id}_{index} class="form-control x_combo" onchange='powerheads.onControlChanged("{i}",{index})'>
+												<select id={id}_{index} class="form-control x_combo" onchange='pumps.onControlChanged("{i}",{index})'>
 												<option value=-1>(Pending)</option>
-												<option value=0>Constant</option>
+												<option value=0>Normal</option>
 												<option value=1>Slow</option>
-												<option value=2>Square</option>
-												<option value=3>Ramp</option>
 												<option value=4>Off</option>
 												<option value=5>Test</option>
 												</select>
 											  {/eq}
-												<span class="input-group-btn"> <button class="btn btn-default" type="button" id="set_{id}_{index}" onclick='powerheads.{func}(event,{index},"{id}")'><i class="glyphicon glyphicon-upload"/></button> </span>
+												<span class="input-group-btn"> <button class="btn btn-default" type="button" id="set_{id}_{index}" onclick='pumps.{func}(event,{index},"{id}")'><i class="glyphicon glyphicon-upload"/></button> </span>
 											</div><!-- /input-group -->
 										</td>
 									</tr>
@@ -104,7 +103,7 @@
 		<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
 		 <table><tr>
 			 <td><p/></td>
-			 <td><button type="button" aria-hidden="true" onclick="powerheads.clearError()">&times;</button></td>
+			 <td><button type="button" aria-hidden="true" onclick="pumps.clearError()">&times;</button></td>
 		</tr></table>
 		</div>
 	</div>

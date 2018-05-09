@@ -191,8 +191,47 @@ router.get('/powerheads_main/:instr_name', function(req, res) {
 	                {i: 5, id: "ramp_sec",    kind: "edit", func: "set_mode", label: "Ramp (sec)"},
 	                {i: 6, id: "ramp_range",  kind: "edit", func: "set_mode", label: "Ramp Range(%)"}
 				   ];
-	d.indexes = [{index: 0, settings: settings},{index: 1, settings: settings}];
+	d.indexes = [{index: 0, 
+	              pump: 2,
+				  settings: settings
+				  },
+				 {index: 1, 
+				  pump: 3,
+				  settings: settings
+				  }];
 	res.render("powerheads_main", d );
+});
+
+/*
+ * GET pumps_main.
+ */
+router.get('/pumps_main/:instr_name', function(req, res) {
+	var session = req.session;
+	var utils = req.utils;
+	var instr_name = req.params.instr_name;
+	var instr = utils.get_instr_by_name(session.instruments,instr_name);
+	if (instr === undefined) {
+		utils.send_error( res, "pumps instrument \'"+instr_name+"\' unknown.");
+		return;
+	}
+	var d = utils.get_master_template_data(req);
+	d.load_javascript.push( "/js/powerheads.c.js" );
+	d.instr_name = instr_name;
+	var settings = [{i: 0, id: "mode",        kind: "mode_combo",func: "set_mode", label: "Mode"},
+					{i: 1, id: "top_speed",   kind: "edit", func: "set_speed", label: "Normal Speed (%)"},
+					{i: 2, id: "slow_speed",  kind: "edit", func: "set_speed", label: "Slow Speed (%)"},
+				   ];
+	d.indexes = [{index: 0, 
+				  label: "Return",
+	              pump: 0,
+				  settings: settings
+				  },
+				 {index: 1, 
+				  label: "Skimmer",
+				  pump: 1,
+				  settings: settings
+				  }];
+	res.render("pumps_main", d );
 });
 
 function init_session( req )
@@ -231,6 +270,15 @@ module.exports = {
 		label: "Powerheads",
 		main_page: "powerheads_main",
 		widget_page: "powerheads_widget",
+		status_cmd: "pstat",
+		status_route: "stand_status/pump",
+		init_session: init_session,
+		init_widget_data: init_widget_data
+	  },
+	  { name: "pumps",
+		label: "Pumps",
+		main_page: "pumps_main",
+		widget_page: "pumps_widget",
 		status_cmd: "pstat",
 		status_route: "stand_status/pump",
 		init_session: init_session,
