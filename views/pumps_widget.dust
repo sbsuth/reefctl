@@ -1,0 +1,19 @@
+<!--Embed the registration call in an input with the name register_widget-->
+<input type=hidden class="register_widget" value=dashboard.register_widget("{status_key}","{instr.name}","powerheads.widgetUpdate","/js/powerheads.c.js") />
+
+<table width=100%>
+<tr class=x_row_emphasize>
+  <td>#1: </td><td class="w_10"/>
+  <td><table>
+	<tr class=x_row_small><td>Mode:</td><td id=ph_mode_0></td></tr>
+	<tr class=x_row_small><td>Speed:</td><td id=ph_speed_0></td></tr>
+  </td></table>
+</tr>
+<tr class=x_row_emphasize>
+  <td>#2: </td><td class="w_10"/>
+  <td><table>
+	<tr class=x_row_small><td>Mode:</td><td id=ph_mode_1></td></tr>
+	<tr class=x_row_small><td>Speed:</td><td id=ph_speed_1></td></tr>
+  </td></table>
+</tr>
+</table>

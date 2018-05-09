@@ -1,0 +1,112 @@
+{>"master" /}
+{<title}: Powerheads{/title}
+{<bodyContent}
+<input type=hidden id=instr_name value={instr_name} />
+<div class="container-fluid outer-container">
+	<div class="container title_row">
+		<table width=100%><tr>
+		<td width=90%><h3>Powerheads</h3></td>
+		<td> <div class="checkbox checkbox-primary">
+				<input id="monitor_cb" type="checkbox" checked="">
+				<label style="padding: 0px;">Monitor</label>
+			</div>
+		</td>
+		</tr></table>
+	</div><!--container-->
+	<div class="container-fluid">
+		<div class="row">
+			<!-- Current speed status bars -->
+			<div class="col-xs-12">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>Current speed</h2>
+				 </div>
+				 <div class="x_content">
+					<div class="row">
+						<div class="col-xs-12 col-md-6">
+						  <table width=100%>
+							{#indexes}
+							  <tr class=x_row>
+								<td class="w_5 row_label" ><p>#{@math key=index method="add" operand="1"/}:</p></td>
+								<td class="w_5 row_label" ><p id=curSpeed_{index}>XXX%</p></td>
+								<td class="w_90">
+								<div class="progress">
+									<div class="progress-bar" id=speed_progress_{index} role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 60%;">
+											<span class="sr-only">60% Complete</span>
+									</div>
+								</div>
+								</td>
+							 </tr>
+							 {/indexes}
+						  </table>
+						</div>
+						<div class="col-xs-12 col-md-6">
+						  <table width=100%>
+							{#indexes}
+							  <tr class=x_row>
+								<td class="w_50 row_label" hidden=true id=temp_shutdown_label_{index}>Temp Shutdown #{@math key=index method="add" operand="1"/}:</td>
+								<td class="w_50" hidden=true id=temp_shutdown_{index}>(not shut down)</td>
+							 </tr>
+							 {/indexes}
+						  </table>
+						</div>
+					</div>
+				 </div>
+				</div>
+			</div><!--col-->
+
+			<!-- Powerhead control -->
+		  {#indexes}
+			<div class="col-xs-12 col-md-6">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>Powerhead #{@math key=index method="add" operand="1"/} Settings</h2>
+				 </div>
+				 <div class="x_content">
+					<div class="row">
+						<div class="col-xs-12">
+							<table class="x_table" width=100%>
+								{#settings}
+									<tr class=x_row>
+										<input type=hidden id={id}_row_{index} value={id} />
+										<td class="w_30" id={id}_label_{index}>{label}</td>
+										<td>
+											<div class="input-group input-group-sm" id={id}_item_{index}>
+											  {@eq key=kind value="edit"}
+												<input  id={id}_{index} type="text" class="form-control" placeholder="{label}" onchange='powerheads.onControlChanged({i},{index})'">
+											  {/eq}
+											  {@eq key=kind value="mode_combo"}
+												<select id={id}_{index} class="form-control x_combo" onchange='powerheads.onControlChanged("{i}",{index})'>
+												<option value=-1>(Pending)</option>
+												<option value=0>Constant</option>
+												<option value=1>Slow</option>
+												<option value=2>Square</option>
+												<option value=3>Ramp</option>
+												<option value=4>Off</option>
+												<option value=5>Test</option>
+												</select>
+											  {/eq}
+												<span class="input-group-btn"> <button class="btn btn-default" type="button" id="set_{id}_{index}" onclick='powerheads.{func}(event,{index},"{id}")'><i class="glyphicon glyphicon-upload"/></button> </span>
+											</div><!-- /input-group -->
+										</td>
+									</tr>
+								{/settings}
+							</table>
+						</div>
+					</div>
+				 </div>
+				 </div>
+			</div><!--col-->
+			{/indexes}
+		</div><!--row-->
+	</div><!--container-->
+	<div class="container" >
+		<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
+		 <table><tr>
+			 <td><p/></td>
+			 <td><button type="button" aria-hidden="true" onclick="powerheads.clearError()">&times;</button></td>
+		</tr></table>
+		</div>
+	</div>
+</div><!--container-->
+{/bodyContent}
