@@ -286,3 +286,14 @@ function PageUtils ( useDebug, usePrefix, useInterval, slowInterval, idleInterva
 
 }
 
+function reqShutdown( event, system, options, duration ) {
+
+    event.preventDefault();
+	var url="/shutdown/"+system+"/"+options+"/"+duration;
+	console.log("Sending shutdown request: "+url);
+	$.ajax({
+		type: 'POST',
+		url: url
+	}).done(function( response ) {
+	});
+}

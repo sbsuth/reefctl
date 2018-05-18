@@ -229,9 +229,25 @@ function clear_session( session )
 // Fill an object with the basic info needed from the session
 // for the master template.
 function get_master_template_data( req ) {
+
+	// Shutdown encoding:
+	// option[1:0] : main
+	// option[3:2] : ph
+	//
+	//  0 : unset
+	//  1 : cancel
+	//  2 : off
+	//  3 : slow
+
 	var d = { session: req.session,
 			  instruments: req.session.instruments,
-			  load_javascript: []
+			  load_javascript: [],
+			  shutdowns: [
+				{ label: "All off, 1 min",
+				  duration: 60,
+				  options: (2 << 2) | 2
+				}
+			  ]
 			};
 	return d;
 }
@@ -482,6 +498,24 @@ function is_daytime() {
 	}
 }
 
+// Compare 2 time specs, where each is a pair of integers [hour,min].
+// Return -1 if a before b, 1 if a after b, and 0 if they match.
+function compare_times( a, b ) {
+	if (a[0] > b[0]) {
+		return 1;
+	} else if (a[0] == b[0]) {
+		if (a[1] > b[1]) {
+			return 1;
+		} else if (a[1] < b[1]) {
+			return -1;
+		} else {
+			return 0;
+		}
+	} else {
+		return -1;
+	}
+}
+
 // Stores the given monitor, indexed by system naem and name.
 function register_monitor( monitor ) {
 	var key = monitor.system_name + "." + monitor.name;
@@ -552,5 +586,6 @@ module.exports = {
 	is_daytime: is_daytime,
 	register_monitor: register_monitor,
 	get_monitor: get_monitor,
-	get_monitors: get_monitors
+	get_monitors: get_monitors,
+	compare_times: compare_times
 };

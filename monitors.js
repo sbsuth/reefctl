@@ -27,6 +27,17 @@ var dosing_settings = {
 	daytime_only:				true
 };
 
+// Shared settings for all server task monitors
+var server_task_settings = {
+	init_data:					initServerTaskData,
+	exec_task:					serverTask,
+	active_interval_sec:		1,
+	watching_interval_sec:		10,
+	post_timeout_interval_sec:	10,
+	debug:						2,
+	daytime_only:				false
+};
+
 // Un-instances monitor types.
 var monitor_types = {};
 
@@ -77,13 +88,13 @@ function create_monitor_types()
 		label: "Manual Tank Fill",
 		target_instr_type: "sump_level",
 		target_fill_ok: function(data,status) {
-			data.target_lev = status.sump_lev;
+			data.target_lev = data.ro_lev;  // How source level instead.
 			data.target_full = false;
 			// Always OK.  Must watch!
 			return true;
 		},
 	};
-	Object.assign( monitors.manual_tank_fill, topup_settings );
+	Object.assign( monitors.manual_tank_fill, {daytime_only: false}, topup_settings );
 
 	//
 	// DAILY WATER CHANGE
@@ -111,6 +122,21 @@ function create_monitor_types()
 		},
 	};
 	Object.assign( monitors.water_change, dosing_settings );
+
+	//
+	// Scheduled shutdown
+	//
+	monitors.scheduled_shutdown = {
+		name: "scheduled_shutdown",
+		label: "Schedule Shutdown",
+		stand_instr_type: "powerheads",
+		start_task: startScheduledShutdown,
+		end_task: endScheduledShutdown,
+		req_task: reqShutdownTask,
+		cancel_task: cancelCurShutdownTask
+	};
+
+	Object.assign( monitors.scheduled_shutdown, server_task_settings );
 
 	return monitors;
 }
@@ -206,6 +232,16 @@ function initDosingData() {
 		return;
 	}
 	data.dosed = [0,0];
+}
+	
+// Initialize missing fields in server task data.
+function initServerTaskData() {
+	var data = this;
+	if (!initData(data)) {
+		return;
+	}
+	data.times = []; // Each one is {start: [hour,min], duration: [hour,min]}
+	data.active_task = undefined; // start, duration, and settings for currently active task.
 }
 	
 function topupTask( data ) {
@@ -448,6 +484,217 @@ function dosingTask( data ) {
 	});
 }
 
+// Store the fields that record current status.
+// This will be re-read every time we take up so its OK to go down and back up again.
+function writeServerTaskData( data ) {
+	var monitors = data.utils.db.get('monitors');
+	monitors.update( {system: data.system_name, name: data.name} , 
+					 {$set: {	times: data.times }},
+					 function( err ) {
+						if (err) {
+							console.log("MON: ERROR: Failed writing status for \'"+data.name+"\' during iter.");
+						}
+					 } );
+}
+
+
+// Execute tasks scheduled at specific times.
+function serverTask( data ) {
+
+	var utils = data.utils;
+
+	if (data.waiting) {
+		// In an async chain.  Don't restart on timer.
+		return;
+	}
+
+	// Set waiting to indicate that all pre-return scheduleIter()'s are valid.
+	data.waiting = true; 
+
+	// Refresh data.
+	data.utils.db.get('monitors').find( 
+		{name: data.name, system: data.system_name}, 
+		'-_id', 
+		function( err, monitor_obj ) {
+
+		if (err) {
+			console.log("MON: ERROR: Failed reading settings for \'"+data.name+"\' during iter.");
+		}
+		if (monitor_obj && (monitor_obj.length > 0)) {
+			Object.assign( data, monitor_obj[0] );
+		}
+
+		var i;
+		var d = new Date();
+		var hour = d.getHours(); // Midnight is 0.
+		var min = d.getMinutes();
+
+		if ((hour == 0) && (min < 10)) {
+			// Reset for the day.
+			for ( var itime=0; itime < data.times.length; itime++ ) {
+				var time = data.times[itime];
+				time.done_today = false;
+			}
+			writeServerTaskData(data);
+			scheduleIter(data,false);
+			return;
+		}
+
+		// If disabled, do nothing, but check if enabled in a while.
+		if (!data.enabled) {
+			scheduleIter(data,false);
+			return;
+		}
+
+		// Search scheduled times and determine if we're entering an active period,
+		// within an active period, or leaving an active period.
+		var handled = false;
+		var now = [hour,min];
+		for ( var itime=-1; itime < data.times.length; itime++ ) {
+			var time = (itime >= 0) ? data.times[itime] : data.active_task;
+			if (!time) {continue;}
+			if (time.done_today) {continue;}
+			var start = time.start;
+			var end = [time.start[0] + time.duration[0],time.start[1] + time.duration[1]];
+			end[0] += Math.floor(end[1]/60);
+			end[1] = Math.floor(end[1]%60);
+			var option = time.option;
+			var duration = (time.duration[0] * 60) | time.duration[1];
+
+			if ((itime < 0) && data.is_active) {
+				// 'time' is the active task.  Check if it should stop.
+				if ( utils.compare_times( now, end ) >= 0) {
+					data.end_task( data, 
+						function() {
+							// Successfully ended.
+							data.active_task = undefined;
+							data.is_active = false;
+							time.done_today = true;
+							scheduleIter(data,false);
+						}, 
+						function (error) {
+							// Error ending.
+							scheduleIter(data,true);
+							if (!data.is_active) {
+								time.done_today = true;
+								data.active_task = undefined; // Retries exhausted.
+							}
+						}
+					);
+					handled = true;
+					break;
+				}
+			} else if (!data.is_active) {
+				// Nothing is active. Check if this time should start.
+				// Until a successful start, we don't set is_active, so 
+				// we'll come back here to retry until those are exhausted.
+				if (   (utils.compare_times( now, start ) >= 0)
+				    && (utils.compare_times( now, end ) < 0)) {
+					data.start_task( data, option, duration,
+						function() {
+							// Successfully started.  Copy into active_task.
+							data.active_task = Object.assign( {}, time );
+							data.is_active = true;
+							scheduleIter(data,false);
+						}, 
+						function (err) {
+							// Error starting.
+							scheduleIter(data,true);
+							if (!data.is_active) {
+								time.done_today = true;
+								data.active_task = undefined; // Retries exhausted.
+							}
+						}
+					);
+					handled = true;
+					break;
+				}
+			}
+		}
+		if (!handled) {
+			scheduleIter(data,false);
+		}
+	});
+}
+
+// Function to begin an scheduled pump shutdown.
+// Options:
+// 
+// option[1:0] : main
+// option[3:2] : ph
+//
+//  0 : unset
+//  1 : cancel
+//  2 : off
+//  3 : slow
+//  
+function startScheduledShutdown( data, option, duration_min, successFunc, errorFunc ) {
+	var utils = data.utils;
+	var instrs = data.instrs;
+	var stand = utils.get_instr_by_type( instrs, data.stand_instr_type );
+
+	var main_opt = (option & 3);
+	var ph_opt = (option >> 2);
+	var duration_sec = (duration_min * 60);
+	var cmd = "tshut "+duration_sec+" "+main_opt+" "+ph_opt;
+	utils.queue_and_send_instr_cmd( stand, cmd,
+		function(status) { // Success
+			data.is_active = false;
+			successFunc();
+		},
+		errorFunc );
+}
+
+// Function to restore the non-shutdown pump speeds.
+function endScheduledShutdown( data, successFunc, errorFunc ) {
+	console.log("HEY: Restoring pumps to normal speeds.");
+	successFunc();
+}
+
+
+// 
+// Function to request a shutdown task to start now with a specified duration.
+// Set the active_task member with 'now' as a start time so it will be retried if 
+// this attempt fails.
+function reqShutdownTask( option, duration, successFunc, errorFunc ) {
+	var d = new Date();
+	var data = this;
+	data.active_task = { option: option,
+						 done_today: false,
+						 start: [d.getHours(), d.getMinutes()],
+						 duration: duration };
+	startScheduledShutdown( data, option, duration,
+		function() {
+			data.is_active = false;
+			data.active_task = undefined;
+			successFunc();
+		},
+		function (error) {
+			// Leave active task in place, and let it retry next time serverTask fires.
+			errorFunc(error);
+		});
+}
+
+// Function to cancel any active task.
+function cancelCurShutdownTask( data, successFunc, errorFunc ) {
+	var was_active = Boolean(data.active_task != undefined);
+	if (was_active) {
+		// Set duration of active task to 0 so if we fail, it will retry the stop.
+		data.active_task.duration = [0,0];
+		endScheduledScheduledTask( data, 
+			function() {
+				// Clear active task here.
+				data.active_task = undefined;
+				data.is_active = false;
+				successFunc();
+			},
+			errorFunc );
+	} else {
+		successFunc();
+	}
+}
+
+
 
 	
 // Schedule an iteration of a task.
@@ -493,7 +740,12 @@ function scheduleIter( data, isRetry ) {
 			: data.watching_interval_sec;
 		
 	if (data.debug > 1) {
-		console.log("MON: "+data.label+": "+data.target_instr_type+": enabled="+data.enabled+", active="+data.is_active+", wait for "+interval+" sec");
+		var msg = "MON: "+data.label;
+		if (data.target_instr_type) {
+			msg += ": "+data.target_instr_type;
+		}
+		msg += ": enabled="+data.enabled+", active="+data.is_active+", wait for "+interval+" sec";
+		console.log(msg);
 	}
 	setTimeout( function() {data.exec_task(data);}, interval*1000 );
 }

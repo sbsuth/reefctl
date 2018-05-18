@@ -34,6 +34,14 @@
           <ul class="nav navbar-nav">
             <li class="active"><a href="/dashboard">Dashboard</a></li>
             <li class="active"><a href="/logging">Logging</a></li>
+            <li class="dropdown">
+              <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Shutdown <span class="caret"></span></a>
+              <ul class="dropdown-menu">
+				{#shutdowns}
+				  <li><a href="#" onclick=reqShutdown(event,"{session.system_name}",{options},{duration})>{label}</a></li>
+				{/shutdowns}
+              </ul>
+            </li>
             <li class="active"><a href="/monitors/{session.system_name}">Monitors</a></li>
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Units <span class="caret"></span></a>

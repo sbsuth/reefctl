@@ -140,8 +140,8 @@ powerheads.validateInt = function( input, descr, min, max ) {
 powerheads.controlsChanged = function( index, mode ) {
 	var page = this;
 	for ( var i=0; i < page.changed_controls[index].length; i++ ) {
-		var found = page.mode_controls.indexOf(i);
-		if ((mode && (found >= 0)) || (!mode && (found < 0))) {
+		var control = page.controls[index][i];
+		if ((mode && control.is_mode) || (!mode && !control.is_mode)) {
 			if (page.changed_controls[index][i]) {
 				return true;
 			}
@@ -154,8 +154,8 @@ powerheads.controlsChanged = function( index, mode ) {
 powerheads.clearControlsChanged = function( index, mode ) {
 	var page = this;
 	for ( var i=0; i < page.changed_controls[index].length; i++ ) {
-		var found = page.mode_controls.indexOf(i);
-		if ((mode && (found >= 0)) || (!mode && (found < 0))) {
+		var control = page.controls[index][i];
+		if ((mode && control.is_mode) || (!mode && !control.is_mode)) {
 			page.changed_controls[index][i] = false;
 		}
 	}
@@ -214,21 +214,27 @@ powerheads.set_mode = function( event, index, speedAlso ) {
 		mode.input.select(); mode.input.focus();
 		return;
 	}
-	if (!page.validateInt( hold_sec.input, hold_sec.label.text(), 1, 1000 )) {
+	if (hold_sec && !page.validateInt( hold_sec.input, hold_sec.label.text(), 1, 1000 )) {
 		return;
 	}
-	if (!page.validateInt( hold_range.input, hold_range.label.text(), 0, 100 )) {
+	if (hold_range && !page.validateInt( hold_range.input, hold_range.label.text(), 0, 100 )) {
 		return;
 	}
-	if (!page.validateInt( ramp_sec.input, ramp_sec.label.text(), 1, 1000 )) {
+	if (ramp_sec && !page.validateInt( ramp_sec.input, ramp_sec.label.text(), 1, 1000 )) {
 		return;
 	}
-	if (!page.validateInt( ramp_range.input, ramp_range.label.text(), 0, 100 )) {
+	if (ramp_range && !page.validateInt( ramp_range.input, ramp_range.label.text(), 0, 100 )) {
 		return;
 	}
 	// Combine hold and range as <hold_sec>.<range_pct>
-	var hold_spec = (hold_sec.input.val()*1.0) + ((hold_range.input.val()*1.0)/100.0);
-	var ramp_spec = (ramp_sec.input.val()*1.0) + ((ramp_range.input.val()*1.0)/100.0);
+	var hold_spec = 0;
+	if (hold_sec && hold_range) {
+		hold_spec = (hold_sec.input.val()*1.0) + ((hold_range.input.val()*1.0)/100.0);
+	}
+	var ramp_spec = 0;
+	if (ramp_sec && ramp_range) {
+		ramp_spec = (ramp_sec.input.val()*1.0) + ((ramp_range.input.val()*1.0)/100.0);
+	}
 
 	// Set mode and all params.
 	page.ignore_status++;
@@ -343,7 +349,6 @@ $(document).ready(function() {
 
 	var page = powerheads;
 	page.last_settings = ["",""];;
-	page.mode_controls = [0,3,4,5,6];
 	page.mode_names = ["Constant","Slow","Square","Ramp","Off","Test","Sin"];
 
 	page.i_pstat = []; // Indexes in pump status array for each powerhead.
@@ -373,9 +378,13 @@ $(document).ready(function() {
 		// Use the values of the '<id>_row_<index>' hidden inputs to get a list of names.
 		$("[id$=row_"+i+"]").each( function() { 
 			var name = $(this).val();
+			var button = $('#set_'+name+"_"+i);
+			// Look for set_mode in onclick to identify mode controls.
+			var is_mode = Boolean( String(button.attr("onclick")).indexOf("set_mode") >= 0);
 			ctrls.push({ input:  $('#'+name+"_"+i),
-						 button: $('#set_'+name+"_"+i),
-						 label: $('#'+name+"_label_"+i)
+						 button: button,
+						 label: $('#'+name+"_label_"+i),
+						 is_mode: is_mode
 						});
 			page.changed_controls[i].push(false);
 		});

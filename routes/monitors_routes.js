@@ -57,6 +57,30 @@ function decode_value( str, type ) {
 	return {value: value, err: err};
 }
 
+/*
+ * POST for a shutdown request
+ */
+router.post('/shutdown/:system/:options/:duration', function(req, res) {
+	var session = req.session;
+	var utils = req.utils;
+	var system = req.params.system;
+	var options = req.params.options;
+	var duration = req.params.duration;
+
+	try {
+		var monitor = utils.get_monitor( system, "scheduled_shutdown", false );
+		monitor.req_task( options, duration, 
+			function(body) { // Success
+				res.send( { msg: '', body: body } );
+			},
+			function(error) { // Error
+				utils.send_error( res, "ERROR: sending shutdown req: "+error);
+			} );
+
+	} catch (err) {
+		console.log("ERROR: shutdown: "+err);
+	}
+});
 
 /*
  * POST a command for a monitor to set a value.
@@ -279,7 +303,7 @@ router.get('/monitors/:system_name/', function(req, res) {
 				},
 			],
 			view_status: [
-				{	label: "Sump Level",
+				{	label: "RO Res Level",
 					field: "target_lev",
 					type:  "int"
 				},
