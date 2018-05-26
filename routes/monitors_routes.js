@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var login = require('./login')
 
 var debug_monitors = 1;
 
@@ -173,7 +174,7 @@ router.get('/monitors_status/:system_name/:option?', function(req, res) {
 /*
  * GET monitors.
  */
-router.get('/monitors/:system_name/', function(req, res) {
+router.get('/monitors/:system_name/', login.validateUser, function(req, res) {
 	var session = req.session;
 	var system_name = req.params.system_name;
 	var utils = req.utils;

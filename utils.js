@@ -237,16 +237,37 @@ function get_master_template_data( req ) {
 	//  0 : unset
 	//  1 : cancel
 	//  2 : off
-	//  3 : slow
+	//  3 : half
+	//  4 : full
 
 	var d = { session: req.session,
 			  instruments: req.session.instruments,
 			  load_javascript: [],
 			  shutdowns: [
 				{ label: "All off, 1 min",
-				  duration: 60,
-				  options: (2 << 2) | 2
-				}
+				  duration: 1,
+				  options: (2 << 3) | 2
+				},
+				{ label: "Pumps off, PH half, 1 min",
+				  duration: 1,
+				  options: (3 << 3) | 2
+				},
+				{ label: "Pumps off, PH full, 5 min",
+				  duration: 5,
+				  options: (3 << 4) | 2
+				},
+				{ label: "All off, 5 min",
+				  duration: 5,
+				  options: (2 << 3) | 2
+				},
+				{ label: "Pumps off, PH half, 5 min",
+				  duration: 5,
+				  options: (3 << 3) | 2
+				},
+				{ label: "Cancel",
+				  duration: 0,
+				  options: (1 << 3) | 1
+				},
 			  ]
 			};
 	return d;

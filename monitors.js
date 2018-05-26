@@ -129,7 +129,7 @@ function create_monitor_types()
 	monitors.scheduled_shutdown = {
 		name: "scheduled_shutdown",
 		label: "Schedule Shutdown",
-		stand_instr_type: "powerheads",
+		target_instr_type: "powerheads",
 		start_task: startScheduledShutdown,
 		end_task: endScheduledShutdown,
 		req_task: reqShutdownTask,
@@ -137,6 +137,20 @@ function create_monitor_types()
 	};
 
 	Object.assign( monitors.scheduled_shutdown, server_task_settings );
+
+
+	//
+	// Fuge light
+	//
+	monitors.fuge_light = {
+		name: "fuge_light",
+		label: "Fuge Light",
+		target_instr_type: "power",
+		start_task: fugeLightOn,
+		end_task: fugeLightOff,
+	};
+
+	Object.assign( monitors.fuge_light, server_task_settings );
 
 	return monitors;
 }
@@ -535,6 +549,10 @@ function serverTask( data ) {
 				var time = data.times[itime];
 				time.done_today = false;
 			}
+			// If there's a task active, mark it as having gone past midnight.
+			if (data.active_task && data.is_active) {
+				data.active_task.over_midnight = true;
+			}
 			writeServerTaskData(data);
 			scheduleIter(data,false);
 			return;
@@ -563,8 +581,12 @@ function serverTask( data ) {
 
 			if ((itime < 0) && data.is_active) {
 				// 'time' is the active task.  Check if it should stop.
+				// If the task has gone past midnight, move back 'end'.
+				if (time.over_midnight && (end[0] >= 24)) {
+					end[0] = end[0] - 24;
+				}
 				if ( utils.compare_times( now, end ) >= 0) {
-					data.end_task( data, 
+					data.end_task( data, option,
 						function() {
 							// Successfully ended.
 							data.active_task = undefined;
@@ -620,21 +642,22 @@ function serverTask( data ) {
 // Function to begin an scheduled pump shutdown.
 // Options:
 // 
-// option[1:0] : main
-// option[3:2] : ph
+// option[2:0] : main
+// option[5:3] : ph
 //
 //  0 : unset
 //  1 : cancel
 //  2 : off
-//  3 : slow
+//  3 : half
+//  4 : full
 //  
 function startScheduledShutdown( data, option, duration_min, successFunc, errorFunc ) {
 	var utils = data.utils;
 	var instrs = data.instrs;
-	var stand = utils.get_instr_by_type( instrs, data.stand_instr_type );
+	var stand = utils.get_instr_by_type( instrs, data.target_instr_type );
 
-	var main_opt = (option & 3);
-	var ph_opt = (option >> 2);
+	var main_opt = (option & 7);
+	var ph_opt = (option >> 3);
 	var duration_sec = (duration_min * 60);
 	var cmd = "tshut "+duration_sec+" "+main_opt+" "+ph_opt;
 	utils.queue_and_send_instr_cmd( stand, cmd,
@@ -646,9 +669,39 @@ function startScheduledShutdown( data, option, duration_min, successFunc, errorF
 }
 
 // Function to restore the non-shutdown pump speeds.
-function endScheduledShutdown( data, successFunc, errorFunc ) {
-	console.log("HEY: Restoring pumps to normal speeds.");
+function endScheduledShutdown( data, option, successFunc, errorFunc ) {
 	successFunc();
+}
+
+// Function to turn on fuge light
+// Options: switch num.
+function fugeLightOn( data, option, duration_min, successFunc, errorFunc ) {
+	var utils = data.utils;
+	var instrs = data.instrs;
+	var power = utils.get_instr_by_type( instrs, data.target_instr_type );
+
+	var cmd = "on "+option;
+	utils.queue_and_send_instr_cmd( power, cmd,
+		function(status) { // Success
+			data.is_active = false;
+			successFunc();
+		},
+		errorFunc );
+}
+
+// Function to restore the non-shutdown pump speeds.
+function fugeLightOff( data, option, successFunc, errorFunc ) {
+	var utils = data.utils;
+	var instrs = data.instrs;
+	var power = utils.get_instr_by_type( instrs, data.target_instr_type );
+
+	var cmd = "off "+option;
+	utils.queue_and_send_instr_cmd( power, cmd,
+		function(status) { // Success
+			data.is_active = false;
+			successFunc();
+		},
+		errorFunc );
 }
 
 
@@ -656,14 +709,14 @@ function endScheduledShutdown( data, successFunc, errorFunc ) {
 // Function to request a shutdown task to start now with a specified duration.
 // Set the active_task member with 'now' as a start time so it will be retried if 
 // this attempt fails.
-function reqShutdownTask( option, duration, successFunc, errorFunc ) {
+function reqShutdownTask( option, durationMin, successFunc, errorFunc ) {
 	var d = new Date();
 	var data = this;
 	data.active_task = { option: option,
 						 done_today: false,
 						 start: [d.getHours(), d.getMinutes()],
-						 duration: duration };
-	startScheduledShutdown( data, option, duration,
+						 duration: [ Math.floor(durationMin/60), Math.floor(durationMin%60) ] };
+	startScheduledShutdown( data, option, durationMin,
 		function() {
 			data.is_active = false;
 			data.active_task = undefined;
