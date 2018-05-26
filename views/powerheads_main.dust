@@ -85,6 +85,7 @@
 												<option value=3>Ramp</option>
 												<option value=4>Off</option>
 												<option value=5>Test</option>
+												<option value=6>Sin</option>
 												</select>
 											  {/eq}
 												<span class="input-group-btn"> <button class="btn btn-default" type="button" id="set_{id}_{index}" onclick='powerheads.{func}(event,{index},"{id}")'><i class="glyphicon glyphicon-upload"/></button> </span>
