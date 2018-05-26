@@ -92,6 +92,7 @@ powerheads.handleStatus = function ( data ) {
 				page.updateSettings( i, pdata[i]);
 				page.last_settings[i] = settings_strs[i];
 			}
+			page.enable_controls(i);
 		}
 		page.debugMsg("New pump status: "+JSON.stringify(pdata));
 		page.goodUpdate();
