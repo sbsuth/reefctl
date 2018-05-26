@@ -1,5 +1,6 @@
 var express = require('express');
 var router = express.Router();
+var login = require('./login')
 
 var debug_power = 1;
 
@@ -84,7 +85,7 @@ router.get('/power_status/:instr_name', function(req, res) {
 /*
  * GET power_main.
  */
-router.get('/power_main/:instr_name', function(req, res) {
+router.get('/power_main/:instr_name', login.validateUser, function(req, res) {
 	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;

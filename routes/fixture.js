@@ -1,6 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var request = require('request');
+var login = require('./login')
 
 var debug_fixture = 1;
 
@@ -85,7 +86,7 @@ router.get('/fixture_height/:instr_name', function(req, res) {
 /*
  * GET fixture_main.
  */
-router.get('/fixture_main/:instr_name', function(req, res) {
+router.get('/fixture_main/:instr_name', login.validateUser, function(req, res) {
 	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;

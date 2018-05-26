@@ -1,11 +1,12 @@
 var express = require('express');
 var router = express.Router();
 var request = require('request');
+var login = require('./login')
 
 /*
  * GET dashboard.
  */
-router.get('/dashboard', function(req, res) {
+router.get('/dashboard', login.validateUser, function(req, res) {
 	var session = req.session;
 	var utils = req.utils;
 	var widgets = [];

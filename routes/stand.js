@@ -85,7 +85,7 @@ router.get('/stand_status/:instr_name/:option?', function(req, res) {
 /*
  * GET temp_main.
  */
-router.get('/temp_main/:instr_name', function(req, res) {
+router.get('/temp_main/:instr_name', login.validateUser, function(req, res) {
 	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
@@ -171,7 +171,7 @@ router.get('/probes_main/:instr_name', login.validateUser, function(req, res) {
 /*
  * GET powerheads_main.
  */
-router.get('/powerheads_main/:instr_name', function(req, res) {
+router.get('/powerheads_main/:instr_name', login.validateUser, function(req, res) {
 	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
@@ -205,7 +205,7 @@ router.get('/powerheads_main/:instr_name', function(req, res) {
 /*
  * GET pumps_main.
  */
-router.get('/pumps_main/:instr_name', function(req, res) {
+router.get('/pumps_main/:instr_name', login.validateUser, function(req, res) {
 	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
