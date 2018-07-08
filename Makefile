@@ -1,5 +1,7 @@
 start:
-	npm start 2>&1 >  reefctl.log &
+	ulimit -c unlimited; \
+	echo "Starting reefctl.  Log file `pwd`/reefctl.log"; \
+	npm start 2>&1 | cat >  reefctl.log 
 
 stop:
 	npm stop
