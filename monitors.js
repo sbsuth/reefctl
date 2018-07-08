@@ -651,7 +651,7 @@ function serverTask( data ) {
 //  3 : half
 //  4 : full
 //  
-function startScheduledShutdown( data, option, duration_min, successFunc, errorFunc ) {
+function startScheduledShutdownX( data, option, duration_min, successFunc, errorFunc ) {
 	var utils = data.utils;
 	var instrs = data.instrs;
 	var stand = utils.get_instr_by_type( instrs, data.target_instr_type );
@@ -669,9 +669,40 @@ function startScheduledShutdown( data, option, duration_min, successFunc, errorF
 }
 
 // Function to restore the non-shutdown pump speeds.
-function endScheduledShutdown( data, option, successFunc, errorFunc ) {
+function endScheduledShutdownX( data, option, successFunc, errorFunc ) {
 	successFunc();
 }
+
+// Temp version that turns off switch #2.
+function startScheduledShutdown( data, option, duration_min, successFunc, errorFunc ) {
+	var utils = data.utils;
+	var instrs = data.instrs;
+	var power = utils.get_instr_by_type( instrs, "power" );
+
+	var cmd = "off 2";
+	utils.queue_and_send_instr_cmd( power, cmd,
+		function(status) { // Success
+			data.is_active = false;
+			successFunc();
+		},
+		errorFunc );
+}
+
+// Temp version that turn on switch #2.
+function endScheduledShutdown( data, option, successFunc, errorFunc ) {
+	var utils = data.utils;
+	var instrs = data.instrs;
+	var power = utils.get_instr_by_type( instrs, "power" );
+
+	var cmd = "on 2";
+	utils.queue_and_send_instr_cmd( power, cmd,
+		function(status) { // Success
+			data.is_active = false;
+			successFunc();
+		},
+		errorFunc );
+}
+
 
 // Function to turn on fuge light
 // Options: switch num.
