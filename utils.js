@@ -582,6 +582,34 @@ function get_monitors( system_name, stripped ) {
 	return rslt;
 }
 
+// Begin to listen on port 3001 for queries from instruments.
+function start_query_server()
+{
+	var server = net.createServer(function(socket) {
+		socket.on('data', function(data){
+			console.log("INSTR QUERY: "+data);
+			var curtimeCmd = "curtime";
+			var str = data.toString('utf8');
+
+			if ( str.substring(0,curtimeCmd.length) == "curtime") {
+				// "curtime" query.
+				// Returns a time integer adjusted for the current timezone.
+				var d = new Date;
+				var t = Math.floor(Date.now()/1000);
+				var tz= d.getTimezoneOffset() * 60;
+				t -= tz;
+				socket.write(""+t+"X");
+			} else {
+				console.log("ERROR: Unrecognized query");
+			}
+		});
+		socket.on('error', function(data){
+			console.log(data);
+		});
+	});
+	server.listen(3001, '10.10.2.2');
+}
+
 module.exports = {
 	init_dust_helpers: function( dust_in ) {
 		dust = dust_in;
@@ -608,5 +636,6 @@ module.exports = {
 	register_monitor: register_monitor,
 	get_monitor: get_monitor,
 	get_monitors: get_monitors,
-	compare_times: compare_times
+	compare_times: compare_times,
+	start_query_server: start_query_server
 };

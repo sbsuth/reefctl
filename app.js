@@ -63,6 +63,7 @@ app.use(session({
 var monitors = require("./monitors");
 monitors.startup( utils );
 
+utils.start_query_server();
 
 // Filter to add app-level objects to the request.
 app.use(function(req,res,next){
