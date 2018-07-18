@@ -18,7 +18,7 @@ var topup_settings = {
 var dosing_settings = {
 	init_data:					initDosingData,
 	exec_task:					dosingTask,
-	active_interval_sec:		30, // Glitch in pump with every check so do infrequently.
+	active_interval_sec:		2 * 60, // Glitch in pump with every check so wait longer than expected time.
 	watching_interval_sec:		5 * 60,
 	post_timeout_interval_sec:	1 * 60,
 	inter_interval_sec:			0,
