@@ -1,0 +1,8 @@
+#!/bin/csh -f 
+
+set n=24
+if ($#argv > 0) then
+	set n=$argv[1]
+endif
+set echo
+echo "dday ${n}" | nc 10.10.2.4 1000 -q 5
