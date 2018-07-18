@@ -278,6 +278,7 @@ function send_error( res, msg )
 	console.log( "ERROR returned: \'"+msg+"\'");
     res.send({
       message: msg,
+      msg: msg,
       error: 400
     });
 }
@@ -375,12 +376,12 @@ function send_instr_cmd_http( instr, cmd, successFunc, failureFunc )
 	);
 }
 
-// Parses a reply from an instrument.
-// Copies non-header strings into the result field.
+// Parses a reply with a leading length.
 // Returns true if it is "complete" which is either when
-// a content length has been read, and that many bytes have
-// been read after the header.
-function parse_reply( state, str ) 
+// A content length has been read, and that many bytes have
+// been read after the header. 
+// Either "Content-Length: " or "CL: " are supported.
+function parseFixedLengthReply( state, str ) 
 {
 	// We make assumptions based on what we know the instruments
 	// may return:
@@ -419,16 +420,53 @@ function parse_reply( state, str )
 	return complete;
 }
 
-// send a command to an instrument directly as a TCP client.
-// call either the success or failure functions depending on the result.
-function send_instr_cmd( instr, cmd, successfunc, failurefunc ) 
+// Parses a reply from an instrument.
+// Copies non-header strings into the result field.
+// Expects \n termiaated lines, with the transaction termianted by \n\n.
+// The 'lines' member of state.result stores the lines in an array.
+// Returns true when the transaction is complete.
+function parseReplyLines( state, str ) 
+{
+	// We make assumptions based on what we know the instruments
+	// may return:
+	//  - May or may not have an HTTP header.
+	//  - Content length is either Content-Length: or CL:.
+	//  - A blank line \r\n follows the Content-Length field.
+	//  - Payload is expeceted to be JSON, and is parsed.
+	var complete = false;
+	var pos = 0;
+	while (pos < str.length) {
+		// Add everything up to the next \n to the accumulated result.
+		var eol = str.indexOf('\n',pos);
+		state.accum += str.substr( pos, (eol>=0) ? eol : undefined );
+
+		if (eol == 0) {
+			// Empty line means we're done.
+			complete = true;
+			break;
+		}
+
+		if (eol > 0) { 
+			pos = eol + 1;
+			state.result.lines.push( state.accum );
+			state.accum = "";
+		} else {
+			pos = str.length;
+		}
+	}
+	return complete;
+}
+
+// Send a command over a socket to an instrument, and parse good responses
+// with the given function.  The 'state' variable's content is dependent on parseFunc.
+// Call either the success or failure functions depending on the result.
+function send_instr_cmd_proto( instr, cmd, parseFunc, state, successfunc, failurefunc ) 
 {
 	var addr = instr.address;
 	var url = addr.split(':');
 	var client = new net.Socket();
 	var success = false;
 	var result = "";
-	var state = {nread: 0, content_len: -1, result: "", connected: false};
 
 	client.setTimeout(3000);
 	client.connect( url[1], url[0], function() {
@@ -443,7 +481,7 @@ function send_instr_cmd( instr, cmd, successfunc, failurefunc )
 		if (debug_queue) {
 			console.log("QUEUE: Got result from cmd '"+cmd+"': "+data.toString());
 		}
-		if (parse_reply( state, data.toString() )) {
+		if (parseFunc( state, data.toString() )) {
 			client.setTimeout(0);
 			client.end();
 		}
@@ -500,6 +538,23 @@ function send_instr_cmd( instr, cmd, successfunc, failurefunc )
 		
 	});
 
+}
+
+// send a command to an instrument directly as a TCP client.
+// call either the success or failure functions depending on the result.
+// Expect a fixed length response.
+function send_instr_cmd( instr, cmd, successFunc, failureFunc ) 
+{
+	var state = {nread: 0, content_len: -1, result: "", connected: false};
+	send_instr_cmd_proto( instr, cmd, parseFixedLengthReply, state, successFunc, failureFunc );
+}
+// send a command to an instrument directly as a TCP client.
+// call either the success or failure functions depending on the result.
+// Expect a series of lines terminated with \n, and \n\n at the end of the data.
+function send_instr_cmd_lines( instr, cmd, successfunc, failurefunc ) 
+{
+	var state = {nread: 0, accum: "", result: {lines: [] }, connected: false};
+	send_instr_cmd_proto( instr, cmd, parseReplyLines, state, successFunc, failureFunc );
 }
 
 function queue_and_send_instr_cmd( instr, cmd, successfunc, failurefunc, res )  {
@@ -598,6 +653,7 @@ function start_query_server()
 				var t = Math.floor(Date.now()/1000);
 				var tz= d.getTimezoneOffset() * 60;
 				t -= tz;
+t -= (60 * 60 * 7);
 				socket.write(""+t+"X");
 			} else {
 				console.log("ERROR: Unrecognized query");
@@ -630,6 +686,7 @@ module.exports = {
 	queue_and_send_instr_cmd: queue_and_send_instr_cmd,
 	send_instr_cmd_http: send_instr_cmd_http,
 	send_instr_cmd: send_instr_cmd,
+	send_instr_cmd_lines: send_instr_cmd_lines,
 	instr_cmd_done: instr_cmd_done,
 	default_instruments: default_instruments,
 	is_daytime: is_daytime,
