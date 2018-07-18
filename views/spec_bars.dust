@@ -5,8 +5,8 @@
 	<div class="bar royal_led"></div>
 	<div class="bar blue_led"></div>
 	<div class="bar cyan_led"></div>
-	<div class="bar red_led"></div>
 	<div class="bar amber_led"></div>
+	<div class="bar red_led"></div>
 	<div style="top: 65px;" class="bar bar_label bar_label1"><p>50%</p></div>
 	<div style="top: 65px;" class="bar bar_label"><p>%</p></div>
 	<div style="top: 65px;" class="bar bar_label"><p>%</p></div>

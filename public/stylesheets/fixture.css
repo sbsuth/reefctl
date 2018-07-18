@@ -1,0 +1,120 @@
+.white_led {
+	background-color: #FFFFF0;
+}
+.violet_led {
+	background-color: #8A2BE2;
+}
+.royal_led {
+	background-color: #00008B;
+}
+.blue_led {
+	background-color: #0000FF;
+}
+.cyan_led {
+	background-color: #00FFFF;
+}
+.red_led {
+	background-color: #FF0000;
+}
+.amber_led {
+	background-color: #FFA500; 
+}
+
+.val_col_label {
+    width: 40%;
+}
+
+.graph {
+	width: 101px;
+	height: 100px;
+	border: 1px solid #aeaeae;
+	background-color: #eaeaea;
+}
+.bar {
+	width: 12px;
+	margin: 1px;
+	display: inline-block;
+	position: relative;
+	vertical-align: baseline;
+}
+
+.bar_label {
+	width: 12px;
+	display: inline-block;
+	vertical-align: bottom;
+	left-margin 1px;
+    writing-mode: tb-rl;
+}
+
+.bar_label p {
+	font-size: 85%;
+}
+.bar_label1 {
+	width: 13px;
+}
+
+.spec_apply td {
+	padding-top: 5px;
+}
+
+.spinner {
+  width: 50px;
+}
+.spinner input {
+  font-size: 100%;
+  text-align: right;
+  padding: 0px;
+  padding-right: 4px;
+  margin-left: 0px;
+}
+
+@media screen and (max-width: 600px) {
+	.spinner-badge, .spinner-badge div {
+	  width: 20px;
+	}
+}
+
+@media screen and (min-width: 600px) {
+	.spinner-badge, .spinner-badge div {
+	  width: 30px;
+	}
+}
+
+.spinner-badge, .spinner-badge div {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  margin-right: 0px;
+  height: 30px;
+  border-radius: 4px;
+}
+
+.input-group-btn-vertical {
+  position: relative;
+  white-space: nowrap;
+  width: 1%;
+  vertical-align: middle;
+  display: table-cell;
+}
+.input-group-btn-vertical > .btn {
+  display: block;
+  float: none;
+  width: 100%;
+  max-width: 100%;
+  padding: 8px;
+  margin-left: -5px;
+  margin-right: 7px;
+  position: relative;
+  border-radius: 0;
+}
+.input-group-btn-vertical > .btn:first-child {
+  border-top-right-radius: 4px;
+}
+.input-group-btn-vertical > .btn:last-child {
+  margin-top: -2px;
+  border-bottom-right-radius: 4px;
+}
+.input-group-btn-vertical i{
+  position: absolute;
+  top: 0;
+  left: 4px;
+}

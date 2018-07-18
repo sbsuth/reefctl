@@ -1,7 +1,11 @@
 {>"master" /}
 {<title}: Lighting Fixture{/title}
+{<local_style}
+    <link href="/stylesheets/fixture.css" rel="stylesheet">
+{/local_style}
 {<bodyContent}
 <input type=hidden id=instr_name value={instr_name} />
+<input type=hidden id=channels value={channels|js} />
 <div class="container-fluid outer-container">
 	<div class="container title_row">
 		<table width=100%><tr>
@@ -15,67 +19,397 @@
 	</div><!--container-->
 	<div class="container-fluid">
 		<div class="row">
-			<!-- Height status bar -->
-			<div class="col-xs-12 col-md-6">
+			<!-- Current values -->
+			<div class="col-xs-12 col-sm-6">
 				<div class="x_panel">
 				 <div class="x_title">
-					<h2>Fixture Height</h2>
+					<h2>Current values</h2>
 				 </div>
 				 <div class="x_content">
-					<div class="row">
-						<div class="col-xs-12">
-							<!-- Column for height prog bar -->
-							<table width=100%><tr>
-								<td class="w_10 row_label" ><p id=curHeight>XXX%</p></td>
-								<td class="w_90">
-								<div class="progress">
-									<div class="progress-bar" id=height_progress role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 60%;">
-											<span class="sr-only">60% Complete</span>
-									</div>
-								</div>
-														</td>
-							</tr></table>
+					<table class="x_table" width=100%><tr><td class="w_70">
+						<table class="x_table" width=100%>
+							<tr class="x_row_emphasize">
+								<td class="val_col_label">Effective%:</td>
+								<td id=timed_pct>(pending)</td>
+							</tr>
+							<tr class="x_row_deemphasize">
+								<td class="val_col_label">Time of day:</td>
+								<td id=tod_sec>(pending)</td>
+							</tr>
+							<tr class="x_row_deemphasize">
+								<td class="val_col_label">Sun angle:</td>
+								<td id=sun_angle>(pending)</td>
+							</tr>
+							<tr class="x_row_deemphasize">
+								<td class="val_col_label">Angle factor:</td>
+								<td id=ang_factor>(pending)</td>
+							</tr>
+							<tr class="x_row_deemphasize">
+								<td class="val_col_label">AM factor:</td>
+								<td id=am_factor>(pending)</td>
+							</tr>
+							<tr class="x_row_deemphasize">
+								<td class="val_col_label">Norm factor:</td>
+								<td id=norm_factor>(pending)</td>
+							</tr>
+							<tr class="x_row_deemphasize">
+								<td class="val_col_label">Peak factor:</td>
+								<td id=peak_factor>(pending)</td>
+							</tr>
+						</table></td>
+						<td valign="top">
+						 <table>
+						   <tr><td>&nbsp;</td></tr>
+						   <tr><td>
+							{>spec_bars bars_id="bars_cur"/}
+						  </td></tr>
+						 </table>
+					</td></tr></table>
+				 </div>
+			   </div>
+			</div>
+			<!-- Top group -->
+			<div class="col-xs-12 col-sm-6">
+				<div class="row">
+					<!-- Mode -->
+					<div class="col-xs-12">
+						<div class="x_panel">
+						 <div class="x_title">
+							<h2>Mode</h2>
+						 </div>
+						 <div class="x_content">
+							<div class="btn-group" data-toggle="buttons">
+							  <label class="btn btn-primary active">
+								<input type="radio" value="0" name="modes" id="timed_mode" checked="">Timed
+							  </label>
+							  <label class="btn btn-primary">
+								<input type="radio" value="1" name="modes" id="low_mode">Low
+							  </label>
+							  <label class="btn btn-primary">
+								<input type="radio" value="2" name="modes" id="high_mode"">High
+							  </label>
+							  <label class="btn btn-primary">
+								<input type="radio" value="3" name="modes" id="off_mode">Off
+							  </label>
+							  <label class="btn btn-primary">
+								<input type="radio" value="4" name="modes" id="external_mode">External
+							  </label>
+							</div>
+						 </div>
 						</div>
+					</div><!--col-->
+					<!-- Brightness -->
+					<div class="col-xs-6 col-sm-12">
+						<div class="x_panel">
+						 <div class="x_title">
+							<h2>Brightness Settings</h2>
+						 </div>
+						 <div class="x_content">
+							<div class="row">
+								<div class="col-xs-12 col-sm-3">
+									<table class="x_table" width=100%>
+									<tr class="x_row">
+										<td class="w_20">Low Level(%)</td>
+										<td > <input type="text" class="form-control" placeholder="Low(%)" id=low_level> </td>
+									</tr>
+									</table>
+								</div>
+								<div class="col-xs-12 col-sm-3">
+									<table class="x_table" width=100%>
+									<tr class="x_row">
+										<td class="w_20">High Level(%)</td>
+										<td > <input type="text" class="form-control" placeholder="High(%)" id=high_level> </td>
+									</tr>
+									</table>
+								</div>
+								<div class="col-xs-12 col-sm-3">
+									<table class="x_table" width=100%>
+									<tr class="x_row">
+										<td class="w_20">Norm Factor</td>
+										<td > <input type="text" class="form-control" placeholder="Factor" id=norm_factor_set> </td>
+									</tr>
+									</table>
+								</div>
+								<div class="col-xs-12 col-sm-3">
+									<table class="x_table" width=100%>
+									<tr class="x_row">
+										<td><button type="button" class="btn btn-success" id="btnLevel">Apply</button></td>
+									</tr>
+									</table>
+								</div>
+							</div>
+						 </div>
+						</div>
+					</div><!--col-->
+
+					<!-- Photo period settings -->
+					<div class="col-xs-6 col-sm-12">
+						<div class="x_panel">
+						 <div class="x_title">
+							<h2>Photo Period</h2>
+						 </div>
+						 <div class="x_content">
+							<div class="row">
+								<div class="col-xs-12 col-sm-3">
+									<table class="x_table" width=100%>
+									<tr class="x_row">
+										<td class="w_20">Sunrise</td>
+										<td class="w_80"> <input type="text" class="form-control" placeholder="Sunrise" id=sunrise> </td>
+									</tr>
+									</table>
+								</div>
+								<div class="col-xs-12 col-sm-3">
+									<table class="x_table" width=100%>
+									<tr class="x_row">
+										<td class="w_20">Photo Period</td>
+										<td > <input type="text" class="form-control" placeholder="Photo Period" id=period> </td>
+									</tr>
+									</table>
+								</div>
+								<div class="col-xs-12 col-sm-3">
+									&nbsp;
+								</div>
+								<div class="col-xs-12 col-sm-3">
+									<table class="x_table" width=100%>
+									<tr class="x_row">
+										<td><button type="button" class="btn btn-success" id="btnPeriod">Apply</button></td>
+									</tr>
+									</table>
+								</div>
+							</div>
+						 </div>
+						</div>
+					</div><!--col-->
+				</div>
+			</div><!--col-->
+
+
+			<!-- Spectrum -->
+			<div class="col-xs-12 col-xl-6">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>Spectrum Settings</h2>
+				 </div>
+				 <div class="x_content">
+					<div id="pct_spec_group" class="row">
+					  {#channels}
+						<div class="col-xs-3 col-md-1">
+							<table class="x_table" width=100%>
+							<tr class="x_row"> <td>{>pct_spinner spinner_id="{name}_pct_spec"/}</td> </tr>
+							<tr><td width=100% align="left">{label}</td></tr>
+							</table>
+						</div>
+					  {/channels}
+						<div class="col-xs-3 col-md-1">
+						  <table class="spec_apply">
+							<tr class="x_row" >
+								<td><button type="button" class="btn btn-success"id="btnSPcts">Apply</button></td>
+							</tr>
+						  </table>
+						</div>
+					</div>
+					<div class="row">
+				      <div class="x_title">
+						<div class="col-xs-7 col-sm-8 col-md-6">
+						  <table>
+							<tr>&nbsp;</tr>
+							<tr class="x_row"><td>
+							<div class="btn-group" data-toggle="buttons">
+							  <label class="btn btn-primary active">
+								<input type="radio" value="0" name="spectrum" id="spec_0" checked="">Spectrum #0
+							  </label>
+							  <label class="btn btn-primary">
+								<input type="radio" value="1" name="spectrum" id="spec_1">Spectrum #1
+							  </label>
+							</div>
+							</td></tr>
+						  </table>
+						</div>
+
+						<div class="col-xs-5 col-sm-4 col-md-2">
+						  <table>
+							<tr>&nbsp;</tr>
+							<tr class="x_row"><td>
+						      {>spec_bars bars_id="bars_spec"/}
+							</td></tr>
+						  </table>
+						</div>
+					  </div>
 					</div>
 				 </div>
 				</div>
 			</div><!--col-->
 
-			<!-- Height control -->
-			<div class="col-xs-12 col-md-6">
-				<!-- Column for height control -->
+			<!-- Location settings -->
+			<div class="col-xs-12 col-xl-6">
 				<div class="x_panel">
 				 <div class="x_title">
-					<h2>Fixture Control</h2>
+					<h2>Location Settings</h2>
 				 </div>
 				 <div class="x_content">
 					<div class="row">
-						<div class="col-xs-12 col-sm-6">
-							<div class="btn-group" style="margin-bottom: 5px">
-								<button type="button" class="btn btn-success" id="btnUp" width=40>Up</button>
-								<button type="button" class="btn btn-primary" id="btnDown" width=40>Down</button>
-								<button type="button" class="btn btn-danger" id="btnStop" width=40>Stop</button>
-							</div>
+						<div class="col-xs-12 col-sm-3">
+							<table class="x_table" width=100%>
+							<tr class="x_row">
+								<td class="w_20">Latitude</td>
+								<td class="w_80"> <input type="text" class="form-control" placeholder="Latitude" id=latitude> </td>
+							</tr>
+							</table>
 						</div>
-						<div class="col-xs-12 col-sm-6">
-							<div class="input-group input-group-sm">
-								<input type="text" class="form-control" placeholder="Cur height %" id=curHeightEntry>
-								<span class="input-group-btn">
-									<button class="btn btn-default" type="button" id="setCurHeight">Set</button>
-								</span>
-							</div><!-- /input-group -->
+						<div class="col-xs-12 col-sm-3">
+							<table class="x_table" width=100%>
+							<tr class="x_row">
+								<td class="w_20">Longitude</td>
+								<td > <input type="text" class="form-control" placeholder="Longitude" id=longitude> </td>
+							</tr>
+							</table>
+						</div>
+						<div class="col-xs-12 col-sm-3">
+							<table class="x_table" width=100%>
+							<tr class="x_row">
+								<td class="w_20">Timezone</td>
+								<td > <input type="text" class="form-control" placeholder="Timezone" id=timezone> </td>
+							</tr>
+							</table>
+						</div>
+						<div class="col-xs-12 col-sm-3">
+							<table class="x_table" width=100%>
+							<tr class="x_row">
+								<td><button type="button" class="btn btn-success" id="btnLoc">Apply</button></td>
+							</tr>
+							</table>
 						</div>
 					</div>
 				 </div>
-				 </div>
+				</div>
 			</div><!--col-->
+			<!-- Cycle stats group -->
+			<div class="col-xs-12">
+				<div class="row">
+					<!-- Cycle @location -->
+					<div class="col-xs-12 col-sm-6">
+						<div class="x_panel">
+						 <div class="x_title">
+							<h2>Cycle @location</h2>
+						 </div>
+						 <div class="x_content">
+							<table class="x_table" width=100%>
+								<tr class="x_row_deemphasize">
+									<td class="val_col_label">Sunrise:</td>
+									<td id=calc_sr>(pending)</td>
+								</tr>
+								<tr class="x_row_deemphasize">
+									<td class="val_col_label">Sunset:</td>
+									<td id=calc_ss>(pending)</td>
+								</tr>
+								<tr class="x_row_deemphasize">
+									<td class="val_col_label">Midday:</td>
+									<td id=calc_ps>(pending)</td>
+								</tr>
+								<tr class="x_row_deemphasize">
+									<td class="val_col_label">Peak %:</td>
+									<td id=calc_pp>(pending)</td>
+								</tr>
+							</table>
+						 </div>
+					   </div>
+					</div>
+					<!-- Cycle in use-->
+					<div class="col-xs-12 col-sm-6">
+						<div class="x_panel">
+						 <div class="x_title">
+							<h2>Cycle in use</h2>
+						 </div>
+						 <div class="x_content">
+							<table class="x_table" width=100%>
+								<tr class="x_row_deemphasize">
+									<td class="val_col_label">Sunrise:</td>
+									<td id=used_sr>(pending)</td>
+								</tr>
+								<tr class="x_row_deemphasize">
+									<td class="val_col_label">Sunset:</td>
+									<td id=used_ss>(pending)</td>
+								</tr>
+								<tr class="x_row_deemphasize">
+									<td class="val_col_label">Midday:</td>
+									<td id=used_ps>(pending)</td>
+								</tr>
+								<tr class="x_row_deemphasize">
+									<td class="val_col_label">Peak %:</td>
+									<td id=used_pp>(pending)</td>
+								</tr>
+							</table>
+						 </div>
+					   </div>
+					</div>
+				</div>
+			</div>
+			<!-- Height group -->
+			<div class="col-xs-12">
+				<div class="row">
+				<!-- Height status bar -->
+				<div class="col-xs-12 col-sm-6">
+					<div class="x_panel">
+					 <div class="x_title">
+						<h2>Fixture Height</h2>
+					 </div>
+					 <div class="x_content">
+						<div class="row">
+							<div class="col-xs-12">
+								<!-- Column for height prog bar -->
+								<table width=100%><tr>
+									<td class="w_10 row_label" ><p id=curHeight>XXX%</p></td>
+									<td class="w_90">
+									<div class="progress">
+										<div class="progress-bar" id=height_progress role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: 60%;">
+												<span class="sr-only">60% Complete</span>
+										</div>
+									</div>
+															</td>
+								</tr></table>
+							</div>
+						</div>
+					 </div>
+					</div>
+				</div><!--col-->
+
+				<!-- Height control -->
+				<div class="col-xs-12 col-sm-6">
+					<!-- Column for height control -->
+					<div class="x_panel">
+					 <div class="x_title">
+						<h2>Fixture Control</h2>
+					 </div>
+					 <div class="x_content">
+						<div class="row">
+							<div class="col-xs-12 col-sm-6">
+								<div class="btn-group" style="margin-bottom: 5px">
+									<button type="button" class="btn btn-success" id="btnUp" width=40>Up</button>
+									<button type="button" class="btn btn-primary" id="btnDown" width=40>Down</button>
+									<button type="button" class="btn btn-danger" id="btnStop" width=40>Stop</button>
+								</div>
+							</div>
+							<div class="col-xs-12 col-sm-6">
+								<div class="input-group input-group-sm">
+									<input type="text" class="form-control" placeholder="Cur height %" id=curHeightEntry>
+									<span class="input-group-btn">
+										<button class="btn btn-default" type="button" id="setCurHeight">Set</button>
+									</span>
+								</div><!-- /input-group -->
+							</div>
+						</div>
+					 </div>
+					 </div>
+				</div><!--col-->
+			  </div>
+		   </div>
 		</div><!--row-->
 	</div><!--container-->
 	<div class="container" >
 		<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
 		 <table><tr>
 			 <td><p/></td>
-			 <td><button type="button" aria-hidden="true" onclick="page.clearError()">&times;</button></td>
+			 <td><button type="button" aria-hidden="true" onclick="fixture.clearError()">&times;</button></td>
 		</tr></table>
 		</div>
 	</div>

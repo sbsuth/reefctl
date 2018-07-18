@@ -86,15 +86,15 @@ body {
 .x_row td, p {
 }
 
-.x_row_emphasize td, p {
+.x_row_emphasize td, .x_row_emphasize p {
 	font-size: 120%;
 }
 
-.x_row_deemphasize td, p {
+.x_row_deemphasize td, .x_row_deemphasize p {
 	font-size: 85%;
 }
 
-.x_row_small td, p {
+.x_row_small td, .x_row_small p {
 	font-size: 60%;
 }
 
@@ -194,3 +194,4 @@ body {
 .monitor_enabled {
 	width: 25%;
 }
+

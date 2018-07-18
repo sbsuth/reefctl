@@ -297,3 +297,57 @@ function reqShutdown( event, system, options, duration ) {
 	}).done(function( response ) {
 	});
 }
+
+function limitSpinner( val, min, max )
+{
+	if (val > max) {
+		return max;
+	} else if (val < min) {
+		return min;
+    } else {
+		return val;
+	}
+}
+
+var spinnerCallback;
+
+function spinnerMouseDown( obj, delta, min, max ) {
+	clearInterval(spinnerCallback);
+	var input = $(obj).parent().siblings('.spinner input');
+	input.val( limitSpinner( parseInt( input.val(), 10) + delta, min, max)).trigger("input");
+	spinnerCallback = setInterval( function() {spinnerMouseDown(obj,delta,min,max);}, 100);
+}
+
+function cancelSpinnerCallback() {
+	if (spinnerCallback) {
+		clearInterval(spinnerCallback);
+	}
+}
+	  
+// Handle up and down buttons for .spinner
+function spinnerSupport( id, min, max, func ) {
+	  $('[id$='+id+'].spinner .btn:first-of-type').each( function() {
+		$(this).on('mousedown', function() {spinnerMouseDown( $(this), 1, min, max )} )
+			   .on('mouseup',function() {cancelSpinnerCallback();});
+	  });
+	  $('[id$='+id+'].spinner .btn:last-of-type').each( function() {
+		$(this).on('mousedown', function() {spinnerMouseDown( $(this), -1, min, max )} )
+			   .on('mouseup',function() {cancelSpinnerCallback();});
+	  });
+	  $('[id$='+id+'].spinner input').on( 'input', function() { func(this); } );
+}
+
+function padInt2(val)
+{
+	return ("0" + val).slice(-2);
+}
+
+function todStr( todInt ) {
+	var hours = Math.floor(todInt / 3600);
+	todInt = todInt % 3600;
+	var min = Math.floor(todInt / 60);
+	todInt = todInt % 60;
+	var sec = todInt;
+	return ""+ padInt2(hours) +":"+ padInt2(min) +":"+ padInt2(sec) ;
+}
+
