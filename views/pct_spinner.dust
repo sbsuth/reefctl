@@ -1,0 +1,14 @@
+<table width=100%>
+ <tr><td class="spinner-badge" > 
+	<div class="{name}_led"></div>
+ </td><td>
+	<div id={spinner_id} class="input-group spinner">
+		<input type="text" class="form-control" data-index={index} data-id={id} value="0">
+		<div class="input-group-btn-vertical">
+		  <button class="btn btn-default" type="button"><i class="glyphicon glyphicon-triangle-top"></i></button>
+		  <button class="btn btn-default" type="button"><i class="glyphicon glyphicon-triangle-bottom"></i></button>
+		</div>
+	</div>
+  </td><tr>
+</table>
+
