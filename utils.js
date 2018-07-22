@@ -653,7 +653,6 @@ function start_query_server()
 				var t = Math.floor(Date.now()/1000);
 				var tz= d.getTimezoneOffset() * 60;
 				t -= tz;
-t -= (60 * 60 * 7);
 				socket.write(""+t+"X");
 			} else {
 				console.log("ERROR: Unrecognized query");

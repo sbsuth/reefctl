@@ -23,7 +23,7 @@ function PageUtils ( useDebug, usePrefix, useInterval, slowInterval, idleInterva
 		}
 	}
 
-	this.showError = function ( code, message ) {
+	this.showError = function ( code, message, elem ) {
 		var alert_box = $( "#alert_box" );
 		var msgText = "ERROR: " + this.debug_prefix + ": " + message;
 		if (code > 0) {
@@ -36,6 +36,9 @@ function PageUtils ( useDebug, usePrefix, useInterval, slowInterval, idleInterva
 		}
 		if (this.debug) {
 			console.log(msgText);
+		}
+		if (elem) {
+			elem.select();
 		}
 	}
 	this.debugMsg = function( msg ) {
@@ -89,7 +92,7 @@ function PageUtils ( useDebug, usePrefix, useInterval, slowInterval, idleInterva
 	this.setUpdateInterval = function( ms ) {
  		var page = this;
 		if (ms > 0) {
-			page.update_interval = ms;
+			page.status_interval = ms;
 		} else {
 			page.disable_status = true;
 		}
@@ -348,6 +351,47 @@ function todStr( todInt ) {
 	var min = Math.floor(todInt / 60);
 	todInt = todInt % 60;
 	var sec = todInt;
-	return ""+ padInt2(hours) +":"+ padInt2(min) +":"+ padInt2(sec) ;
+	var str = ""+ padInt2(hours) +":"+ padInt2(min);
+	if (sec > 0) {
+		str += ":"+ padInt2(sec) ;
+	}
+	return str;
 }
 
+function encodeDayTime( spec ) {
+	if ((spec == "") || (spec == "0") || isNaN(spec) ) {
+		return 0;
+	}
+	if ((spec < 0) || (spec >= 3600*24)) {
+		return (3600*24)-1;
+	}
+	return todStr(spec);
+}
+
+// Expect hour:min:sec, with  :sec optional.
+// '0' is special: means 0.
+function decodeDayTime( spec ) {
+
+	// Empty string or integer 0 means 0.
+	if ((spec == "") || (spec == "0")) {
+		return 0;
+	}
+	var fields = spec.split(":");
+	if ((fields.length > 3) || (fields.length < 2)) {
+		return -1;
+	}
+	var hour = fields[0];
+	var min = fields[1];
+	var sec = (fields.length > 2) ? fields[2] : 0;
+	if ((hour < 0) || (hour > 23)) {
+		return -1;
+	}
+	if ((min < 0) || (min > 59)) {
+		return -1;
+	} 
+	if ((sec < 0) || (sec > 59)) {
+		return -1;
+	}
+	return (hour * 3600) + (min * 60) + sec;
+		
+}
