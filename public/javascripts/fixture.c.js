@@ -143,6 +143,7 @@ fixture.handleStat = function ( data ) {
 		$("#norm_factor_set").val( data.norm_factor );
 		$("#peak_factor").text( data.peak_factor );
 		$("#tod_sec").text( todStr(data.tod_sec) );
+		$("#eff_tod").text( todStr(data.eff_tod) );
 
 		if (data.moving) {
 			page.sayMoving();

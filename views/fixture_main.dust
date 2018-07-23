@@ -37,6 +37,10 @@
 								<td id=tod_sec>(pending)</td>
 							</tr>
 							<tr class="x_row_deemphasize">
+								<td class="val_col_label">Effective Time:</td>
+								<td id=eff_tod>(pending)</td>
+							</tr>
+							<tr class="x_row_deemphasize">
 								<td class="val_col_label">Sun angle:</td>
 								<td id=sun_angle>(pending)</td>
 							</tr>
