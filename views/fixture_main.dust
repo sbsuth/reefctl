@@ -154,7 +154,7 @@
 						 </div>
 						 <div class="x_content">
 							<div class="row">
-								<div class="col-xs-12 col-sm-3">
+								<div class="col-xs-12 col-sm-4">
 									<table class="x_table" width=100%>
 									<tr class="x_row">
 										<td class="w_20">Sunrise</td>
@@ -162,16 +162,13 @@
 									</tr>
 									</table>
 								</div>
-								<div class="col-xs-12 col-sm-3">
+								<div class="col-xs-12 col-sm-4">
 									<table class="x_table" width=100%>
 									<tr class="x_row">
 										<td class="w_20">Photo Period</td>
 										<td > <input type="text" class="form-control" placeholder="Photo Period" id=period> </td>
 									</tr>
 									</table>
-								</div>
-								<div class="col-xs-12 col-sm-3">
-									&nbsp;
 								</div>
 								<div class="col-xs-12 col-sm-3">
 									<table class="x_table" width=100%>
@@ -244,49 +241,6 @@
 				</div>
 			</div><!--col-->
 
-			<!-- Location settings -->
-			<div class="col-xs-12 col-xl-6">
-				<div class="x_panel">
-				 <div class="x_title">
-					<h2>Location Settings</h2>
-				 </div>
-				 <div class="x_content">
-					<div class="row">
-						<div class="col-xs-12 col-sm-3">
-							<table class="x_table" width=100%>
-							<tr class="x_row">
-								<td class="w_20">Latitude</td>
-								<td class="w_80"> <input type="text" class="form-control" placeholder="Latitude" id=latitude> </td>
-							</tr>
-							</table>
-						</div>
-						<div class="col-xs-12 col-sm-3">
-							<table class="x_table" width=100%>
-							<tr class="x_row">
-								<td class="w_20">Longitude</td>
-								<td > <input type="text" class="form-control" placeholder="Longitude" id=longitude> </td>
-							</tr>
-							</table>
-						</div>
-						<div class="col-xs-12 col-sm-3">
-							<table class="x_table" width=100%>
-							<tr class="x_row">
-								<td class="w_20">Timezone</td>
-								<td > <input type="text" class="form-control" placeholder="Timezone" id=timezone> </td>
-							</tr>
-							</table>
-						</div>
-						<div class="col-xs-12 col-sm-3">
-							<table class="x_table" width=100%>
-							<tr class="x_row">
-								<td><button type="button" class="btn btn-success" id="btnLoc">Apply</button></td>
-							</tr>
-							</table>
-						</div>
-					</div>
-				 </div>
-				</div>
-			</div><!--col-->
 
 			<!-- Cycle stats group -->
 			<div class="col-xs-12">
@@ -349,6 +303,50 @@
 					</div>
 				</div>
 			</div>
+
+			<!-- Location settings -->
+			<div class="col-xs-12 col-xl-6">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>Location Settings</h2>
+				 </div>
+				 <div class="x_content">
+					<div class="row">
+						<div class="col-xs-12 col-sm-3">
+							<table class="x_table" width=100%>
+							<tr class="x_row">
+								<td class="w_20">Latitude</td>
+								<td class="w_80"> <input type="text" class="form-control" placeholder="Latitude" id=latitude> </td>
+							</tr>
+							</table>
+						</div>
+						<div class="col-xs-12 col-sm-3">
+							<table class="x_table" width=100%>
+							<tr class="x_row">
+								<td class="w_20">Longitude</td>
+								<td > <input type="text" class="form-control" placeholder="Longitude" id=longitude> </td>
+							</tr>
+							</table>
+						</div>
+						<div class="col-xs-12 col-sm-3">
+							<table class="x_table" width=100%>
+							<tr class="x_row">
+								<td class="w_20">Timezone</td>
+								<td > <input type="text" class="form-control" placeholder="Timezone" id=timezone> </td>
+							</tr>
+							</table>
+						</div>
+						<div class="col-xs-12 col-sm-3">
+							<table class="x_table" width=100%>
+							<tr class="x_row">
+								<td><button type="button" class="btn btn-success" id="btnLoc">Apply</button></td>
+							</tr>
+							</table>
+						</div>
+					</div>
+				 </div>
+				</div>
+			</div><!--col-->
 
 			<!-- Save/restore -->
 			<div class="col-xs-12 col-xl-6">

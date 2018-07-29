@@ -3,12 +3,15 @@ var fixture = new PageUtils( 1, "FIXTURE", 5*1000, 30*1000, 5*60*1000 );
 fixture.stat_cmd_index = -1;
 fixture.moving = false;
 fixture.cur_spec = 0;
-fixture.slow_interval = 5000;
+fixture.standby_interval = 30*1000;
+fixture.slow_interval = 5*1000;
 fixture.fast_interval = 400;
+fixture.standby_delay = 5*60*1000;
 fixture.channels = [];
 fixture.last_moving = 0;
 fixture.seen_cmds = {};
 fixture.last_cmd = "";
+fixture.last_input = new Date().getTime();
 
 // Sets a timestamp marking that fixture movement is occurring and shuold be tracked.
 fixture.sayMoving = function() {
@@ -34,6 +37,10 @@ fixture.cmdValid = function( cmd ) {
 	return fixture.seen_cmds[cmd];
 }
 
+fixture.uiActionDone = function() {
+	fixture.last_input = new Date().getTime();
+}
+
 // Returns {cmd: <name>, delay: <d>} for the update function to do next,
 // and the delay until the next update.
 fixture.nextUpdateFunc = function() {
@@ -42,6 +49,7 @@ fixture.nextUpdateFunc = function() {
 
 	// If the fixture is moving, only go gh.
 	if ((now - fixture.last_moving) < 2000) {
+		fixture.last_input = now;
 		return {cmd: "gh", delay: fixture.fast_interval};
 	}
 
@@ -54,10 +62,18 @@ fixture.nextUpdateFunc = function() {
 		}
 	}
 
-	if (fixture.last_cmd == "stat") {
-		return {cmd: "gvals", delay: fixture.slow_interval};
+	// Slow down updates after no UI's used for a while.
+	var delay;
+	if ((new Date().getTime() - fixture.last_input) > fixture.standby_delay) {
+		delay = fixture.standby_interval;
 	} else {
-		return {cmd: "stat", delay: fixture.slow_interval};
+		delay = fixture.slow_interval = 5*1000;
+	}
+
+	if (fixture.last_cmd == "stat") {
+		return {cmd: "gvals", delay: delay};
+	} else {
+		return {cmd: "stat", delay: delay};
 	}
 }
 
@@ -465,6 +481,8 @@ fixture.sendCmd = function (event,cmd,args,nextFunc) {
     event.preventDefault();
 	page.debugMsg("Sending fixture cmd: "+cmd);
 
+	fixture.uiActionDone();
+
 	var url = '/fixture_cmd/'+cmd+"/"+page.instr_name;
 	if (args) {
 		for ( var i=0; i < args.length; i++ ) {
@@ -552,6 +570,9 @@ fixture.pct_spec_entryChanged = function(input) {
 			pcts.push(val);
 		}
 	});
+
+	fixture.uiActionDone();
+
 	var input_id = $(input).parent().attr('id');
 	var suffix = input_id.substring( input_id.lastIndexOf("_")+1);
 	fixture.updateSpectrum("bars_"+suffix,pcts);
