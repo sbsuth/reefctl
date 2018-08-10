@@ -12,8 +12,9 @@ powerheads.updateStatus = function ()
     if (page.waiting_status) {
 		return;
 	}
+	var fuse_ms = 5*1000;
 	page.waiting_status = 1;
-	var url = '/stand_status/'+page.instr_name+'/pump';
+	var url = '/stand_status/'+page.instr_name+"/"+fuse_ms+'/pump';
 	page.debugMsg("Sending command: "+url);
 	$.getJSON( url, function(data) { page.handleStatus( data ) } );
 }

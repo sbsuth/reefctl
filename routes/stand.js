@@ -26,32 +26,27 @@ router.post('/stand_cmd/:cmd/:instr_name/:arg1?/:arg2?/:arg3?/:arg4?', function(
 		console.log("STAND: Incoming command: "+cmd);
 	}
 
-	utils.queue_instr_cmd( instr, function () {
-		if (debug_stand) {
-			console.log("STAND: Sending "+cmd+" command from server");
-		}
-		utils.send_instr_cmd( instr, cmd,
-			function(body) { // Success
-				if (debug_stand) {
-					console.log("STAND: Got "+cmd+" response in server:"+JSON.stringify(body));
-				}
-				res.send( { msg: '', body: body } );
-			},
-			function(error) { // Error
-				utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+	utils.queue_and_send_instr_cmd( instr, cmd, 0,
+		function(body) { // Success
+			if (debug_stand) {
+				console.log("STAND: Got "+cmd+" response in server:"+JSON.stringify(body));
 			}
-		);
-	});
-
+			res.send( { msg: '', body: body } );
+		},
+		function(error) { // Error
+			utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+		}
+	);
 });
 
 //
 // GET stand_status query.
 //
-router.get('/stand_status/:instr_name/:option?', function(req, res) {
+router.get('/stand_status/:instr_name/:fuse/:option?', function(req, res) {
 	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
+	var fuse = req.params.fuse;
 	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "ERROR: stand instrument \'"+instr_name+"\' unknown.");
@@ -62,22 +57,17 @@ router.get('/stand_status/:instr_name/:option?', function(req, res) {
 	if (debug_stand) {
 		console.log("STAND: Incoming stand status");
 	}
-	utils.queue_instr_cmd( instr, function () {
-		if (debug_stand) {
-			console.log("STAND: Sending "+cmd+" command from server");
-		}
-		utils.send_instr_cmd( instr, cmd,
-			function(body) { // Success
-				if (debug_stand) {
-					console.log("STAND: Got "+cmd+" response in server:"+JSON.stringify(body));
-				}
-				res.send( body );
-			},
-			function(error) { // Error
-				utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+	utils.queue_and_send_instr_cmd( instr, cmd, fuse,
+		function(body) { // Success
+			if (debug_stand) {
+				console.log("STAND: Got "+cmd+" response in server:"+JSON.stringify(body));
 			}
-		);
-	}, res); // Sending res says "Don't do this if there's something already queued."
+			res.send( body );
+		},
+		function(error) { // Error
+			utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+		}, 
+		res); // Sending res says "Don't do this if there's something already queued."
 });
 
 
@@ -243,10 +233,16 @@ function init_widget_data( req, instr, widget )
 {
 }
 
+// called when the background status query gets a result for this instrument.
+function handle_status( addr, cmd, status )
+{
+}
+
 
 module.exports = {
 	router: router,
 	name: "stand",
+	handle_status: handle_status,
 	instrs: [
 	  { name: "temp",
 		label: "Temperature controller",
@@ -292,33 +288,6 @@ module.exports = {
 		status_route: "stand_status",
 		init_session: init_session,
 		init_widget_data: init_widget_data
-	  },
-	  { name: "ro_res", // Bogus!  Needs to go in an ro_res route
-		label: "RO Reservoir",
-		main_page: undefined,
-		widget_page: undefined,
-		status_cmd: "stat",
-		status_route: "stand_status",
-		init_session: init_session,
-		init_widget_data: init_widget_data
-	  },
-	  { name: "salt_res", // Bogus!  Needs to go in an salt_res route
-		label: "Saltwater Reservoir",
-		main_page: undefined,
-		widget_page: undefined,
-		status_cmd: "stat",
-		status_route: "stand_status",
-		init_session: init_session,
-		init_widget_data: init_widget_data
-	  },
-	  { name: "dosing", // Bogus!  Needs to go in an dosing route
-		label: "Dosing Pumps",
-		main_page: undefined,
-		widget_page: undefined,
-		status_cmd: "stat",
-		status_route: "dosing_status",
-		init_session: init_session,
-		init_widget_data: init_widget_data
-	  },
+	  }
 	]
 };

@@ -11,9 +11,10 @@ temp.updateStatus = function ()
     if (page.waiting_status) {
 		return;
 	}
+	var fuse_ms = 5*1000;
 	page.waiting_status = 1;
 	page.debugMsg("Sending stand status");
-	$.getJSON( '/stand_status/'+page.instr_name, function(data) { page.handleStatus( data ) } );
+	$.getJSON( '/stand_status/'+page.instr_name+"/"+fuse_ms, function(data) { page.handleStatus( data ) } );
 }
 
 temp.calcAve = function( t0, t1 ) {

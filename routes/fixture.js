@@ -118,22 +118,17 @@ try {
 	if (debug_fixture) {
 		console.log("FIXTURE: Incoming command: "+cmd);
 	}
-	utils.queue_instr_cmd( instr, function () {
-		if (debug_fixture) {
-			console.log("FIXTURE: Sending "+cmd+" command from server");
-		}
-		utils.send_instr_cmd( instr, cmd,
-			function(body) { // Success
-				if (debug_fixture) {
-					console.log("FIXTURE: Got "+cmd+" response in server");
-				}
-				res.send( { msg: '', body: body } );
-			},
-			function(error) { // Error
-				utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+	utils.queue_and_send_instr_cmd( instr, cmd, 0,
+		function(body) { // Success
+			if (debug_fixture) {
+				console.log("FIXTURE: Got "+cmd+" response in server");
 			}
-		);
-	});
+			res.send( { msg: '', body: body } );
+		},
+		function(error) { // Error
+			utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+		}
+	);
 } catch (err) {
 	console.log("CATCH: fixture_cmd: "+err);
 }
@@ -142,10 +137,11 @@ try {
 //
 // GET fixture query.
 //
-router.get('/fixture_query/:cmd/:instr_name/:arg1?', function(req, res) {
+router.get('/fixture_query/:cmd/:instr_name/:fuse/:arg1?', function(req, res) {
 	var utils = req.utils;
 	var session = req.session;
 	var instr_name = req.params.instr_name;
+	var fuse = req.params.fuse;
 	var arg1 = req.params.arg1;
 try {
 	var instr = utils.get_instr_by_name(session.instruments,instr_name);
@@ -163,22 +159,18 @@ try {
 	if (debug_fixture) {
 		console.log("FIXTURE: Incoming fixture query: "+cmd);
 	}
-	utils.queue_instr_cmd( instr, function () {
-		if (debug_fixture) {
-			console.log("FIXTURE: Sending "+cmd+" command from server");
-		}
-		utils.send_instr_cmd( instr, cmd,
-			function(body) { // Success
-				if (debug_fixture) {
-					console.log("FIXTURE: Got "+cmd+" response in server");
-				}
-				res.send( body );
-			},
-			function(error) { // Error
-				utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+	utils.queue_and_send_instr_cmd( instr,  cmd, fuse,
+		function(body) { // Success
+			if (debug_fixture) {
+				console.log("FIXTURE: Got "+cmd+" response in server");
 			}
-		);
-	}, res); // Sending res says "Don't do this if there's something already queued."
+			res.send( body );
+		},
+		function(error) { // Error
+			utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+		},
+		res); // Sending res says "Don't do this if there's something already queued."
+
 } catch (err) {
 	console.log("CATCH: fixture_query: "+err);
 }
@@ -211,22 +203,17 @@ try {
 	if (debug_fixture) {
 		console.log("FIXTURE: Incoming dump_day command: "+cmd);
 	}
-	utils.queue_instr_cmd( instr, function () {
-		if (debug_fixture) {
-			console.log("FIXTURE: Sending "+cmd+" command from server");
-		}
-		utils.send_instr_cmd_lines( instr, cmd,
-			function(body) { // Success
-				if (debug_fixture) {
-					console.log("FIXTURE: Got "+cmd+" response in server");
-				}
-				res.send( body );
-			},
-			function(error) { // Error
-				utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+	utils.queue_and_send_instr_cmd( instr, cmd, 0,
+		function(body) { // Success
+			if (debug_fixture) {
+				console.log("FIXTURE: Got "+cmd+" response in server");
 			}
-		);
-	}, res); // Sending res says "Don't do this if there's something already queued."
+			res.send( body );
+		},
+		function(error) { // Error
+			utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+		},
+		res); // Sending res says "Don't do this if there's something already queued."
 } catch (err) {
 	console.log("CATCH: dump_day: "+err);
 }
@@ -305,17 +292,23 @@ function init_widget_data( req, instr, widget )
 {
 }
 
+// called when the background status query gets a result for this instrument.
+function handle_status( addr, cmd, status )
+{
+}
+
 
 module.exports = {
 	router: router,
 	name: "fixture",
+	handle_status: handle_status,
 	instrs: [ 
 	  {
 		name: "fixture",
 		label: "Lighting fixture",
 		main_page: "fixture_main",
 		widget_page: "fixture_widget",
-		status_cmd: "gh",
+		status_cmd: "stat",
 		status_route: "fixture_query/stat",
 		init_session: init_session,
 		init_widget_data: init_widget_data

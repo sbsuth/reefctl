@@ -89,7 +89,9 @@ fixture.updateStatus = function ()
 		return;
 	}
 
-	var cur_cmd = page.nextUpdateFunc().cmd;
+	var nextFunc = page.nextUpdateFunc();
+	var cur_cmd = nextFunc.cmd;
+	var fuse = nextFunc.delay;
 
 	page.waiting_status = 1;
 
@@ -117,7 +119,7 @@ fixture.updateStatus = function ()
 	}
 	if (cur_cmd != "") {
 		fixture.last_cmd = cur_cmd;
-		$.getJSON( '/fixture_query/'+cur_cmd+'/'+page.instr_name+cmd_arg, callback );
+		$.getJSON( '/fixture_query/'+cur_cmd+'/'+page.instr_name+"/"+fuse+cmd_arg, callback );
 	} else {
 		page.waiting_status = 0;
 	}

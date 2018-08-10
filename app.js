@@ -30,6 +30,7 @@ app.set('view engine', 'dust');
 var utils = require("./utils");
 utils.init_dust_helpers( dust );
 utils.load_instr_mods();
+utils.start_queue_monitor();
 utils.db = db;
 
 // uncomment after placing your favicon in /public

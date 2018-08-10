@@ -26,31 +26,27 @@ router.post('/power_cmd/:cmd/:instr_name/:unit?', function(req, res) {
 	if (debug_power) {
 		console.log("POWER: Incoming command: "+cmd);
 	}
-	utils.queue_instr_cmd( instr, function () {
-		if (debug_power) {
-			console.log("POWER: Sending "+cmd+" command from server");
-		}
-		utils.send_instr_cmd( instr, cmd,
-			function(body) { // Success
-				if (debug_power) {
-					console.log("POWER: Got "+cmd+" response in server");
-				}
-				res.send( { msg: '', body: body } );
-			},
-			function(error) { // Error
-				utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+	utils.queue_and_send_instr_cmd( instr, cmd, 0,
+		function(body) { // Success
+			if (debug_power) {
+				console.log("POWER: Got "+cmd+" response in server");
 			}
-		);
-	});
+			res.send( { msg: '', body: body } );
+		},
+		function(error) { // Error
+			utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+		}
+	);
 });
 
 //
 // GET switch_status query.
 //
-router.get('/power_status/:instr_name', function(req, res) {
+router.get('/power_status/:instr_name/:fuse', function(req, res) {
 	var session = req.session;
 	var utils = req.utils;
 	var instr_name = req.params.instr_name;
+	var fuse = req.params.fuse;
 	var instr = utils.get_instr_by_name(session.instruments,instr_name);
 	if (instr === undefined) {
 		utils.send_error( res, "ERROR: power panel \'"+instr_name+"\' unknown.");
@@ -62,22 +58,17 @@ router.get('/power_status/:instr_name', function(req, res) {
 	var url = instr.address;
 	var cmd = "stat";
 
-	utils.queue_instr_cmd( instr, function () {
-		if (debug_power) {
-			console.log("POWER: Sending "+cmd+" command from server");
-		}
-		utils.send_instr_cmd( instr, cmd,
-			function(body) { // Success
-				if (debug_power) {
-					console.log("POWER: Got "+cmd+" response in server: '"+body+"'");
-				}
-				res.send( body );
-			},
-			function(error) { // Error
-				utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+	utils.queue_and_send_instr_cmd( instr, cmd, fuse,
+		function(body) { // Success
+			if (debug_power) {
+				console.log("POWER: Got "+cmd+" response in server: '"+body+"'");
 			}
-		);
-	}, res); // Sending res says "Don't do this if there's something already queued."
+			res.send( body );
+		},
+		function(error) { // Error
+			utils.send_error( res, "ERROR: sending command \'"+cmd+"\' to stand "+instr_name+": "+error);
+		}
+	    , res); // Sending res says "Don't do this if there's something already queued."
 });
 
 
@@ -116,9 +107,14 @@ function init_widget_data( req, instr, widget )
 {
 }
 
+// called when the background status query gets a result for this instrument.
+function handle_status( addr, cmd, status )
+{
+}
 module.exports = {
 	router: router,
 	name: "power",
+	handle_status: handle_status,
 	instrs: [ 
 	  {
 		name: "power",

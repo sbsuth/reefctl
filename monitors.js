@@ -6,6 +6,7 @@ var topup_settings = {
 	active_interval_sec:		10,
 	watching_interval_sec:		5 * 60,
 	post_timeout_interval_sec:	1 * 60,
+	fuse_ms:					5 * 1000,
 	num_retries:				5,
 	ro_min_level:				20,
 	debug:						2,
@@ -21,6 +22,7 @@ var dosing_settings = {
 	active_interval_sec:		2 * 60, // Glitch in pump with every check so wait longer than expected time.
 	watching_interval_sec:		5 * 60,
 	post_timeout_interval_sec:	1 * 60,
+	fuse_ms:					5 * 1000,
 	inter_interval_sec:			0,
 	num_retries:				5,
 	debug:						2,
@@ -34,6 +36,19 @@ var server_task_settings = {
 	active_interval_sec:		1,
 	watching_interval_sec:		10,
 	post_timeout_interval_sec:	10,
+	debug:						2,
+	daytime_only:				false
+};
+
+// Periodic unit check.
+var unit_check_settings = {
+	init_data:					initUnitCheckData,
+	exec_task:					unitCheck,
+	active_interval_sec:		10,
+	watching_interval_sec:		10,
+	post_timeout_interval_sec:	10,
+	store_interval_sec:			5 * 60,
+	fuse_ms:					5 * 1000,
 	debug:						2,
 	daytime_only:				false
 };
@@ -152,6 +167,17 @@ function create_monitor_types()
 
 	Object.assign( monitors.fuge_light, server_task_settings );
 
+	//
+	// Unit check
+	//
+	monitors.unit_check = {
+		name: "unit_check",
+		label: "Unit Check",
+		target_instr_type: "all",
+	};
+
+	Object.assign( monitors.unit_check, unit_check_settings );
+
 	return monitors;
 }
 
@@ -258,6 +284,44 @@ function initServerTaskData() {
 	data.active_task = undefined; // start, duration, and settings for currently active task.
 }
 	
+// Initialize missing fields in unit check data.
+function initUnitCheckData() {
+	var data = this;
+	var utils = data.utils;
+	var instrs = data.instrs;
+	if (!initData(data)) {
+		return;
+	}
+
+	// We find all unique addresses for instrments whose module has a handle_status.
+	// We will use a status_cmd from the first instrument found so this mechanism 
+	// is not good for gathering data reported by any of the later instrs at the same address.
+	// Unit tags are the addresses, so we check once per address.
+	data.units = []; // An array of units to be monitored.  Indexed by integer.
+	data.handledAddrs = []; // A record of which addresses are handled.  Index by string.
+	var now = new Date().getTime();
+	for ( var iinstr=0; iinstr < instrs.length; iinstr++ ) {
+		var instr = instrs[iinstr];
+		var mod = utils.get_instr_mod( instr.type );
+		if (!instr.status_cmd || (instr.status_cmd == "") || (data.handledAddrs[instr.address] != undefined)) {
+			continue;
+		}
+		var mod_check = {
+			module_name: mod.name,
+			address: instr.address,
+			cmd: instr.status_cmd,
+			shutdown_switch: instr.shutdown_switch,
+			handle_status: mod.handle_status,
+			last_store_ms: now,
+			num_good: 0,
+			num_bad: 0
+		};
+		data.handledAddrs[instr.address] = mod_check;
+		data.units.push(mod_check);
+	}
+	data.next_unit = (data.units.length > 0) ? 0 : -1;
+}
+	
 function topupTask( data ) {
 
 	var utils = data.utils;
@@ -298,9 +362,9 @@ function topupTask( data ) {
 		}
 
 		// Get the target status, and if not full, run the fill pump
-		utils.queue_and_send_instr_cmd( target, "stat", 
+		utils.queue_and_send_instr_cmd( target, "stat", data.fuse_ms,
 			function(target_status) { // Success
-				utils.queue_and_send_instr_cmd( ro_res, "stat", 
+				utils.queue_and_send_instr_cmd( ro_res, "stat",  data.fuse_ms,
 					function(ro_status) { // Success
 						data.ro_lev = ro_status.res_lev;
 						if (   data.target_fill_ok(data,target_status)
@@ -312,7 +376,7 @@ function topupTask( data ) {
 								logFilling( data );
 							}
 							var pon_cmd = "pon "+data.pump_num+" "+(data.active_interval_sec*2);
-							utils.queue_and_send_instr_cmd( ro_res, pon_cmd, 
+							utils.queue_and_send_instr_cmd( ro_res, pon_cmd, 0,
 								function(ro_status) { // Success
 									data.time_filling = ro_status.ton;
 									data.retries_left = data.num_retries; // Reset retries on success.
@@ -425,7 +489,7 @@ function dosingTask( data ) {
 		// If we get here, its time to start, and we're not yet done.
 		// Get the dosing status, judge if we can start the next phase,
 		// then get the stand status, and if OK, do a dose.
-		utils.queue_and_send_instr_cmd( dosing, "stat", 
+		utils.queue_and_send_instr_cmd( dosing, "stat", data.fuse_ms,
 			function(dosing_status) { // Success
 
 				data.res_lev = dosing_status.dist;
@@ -446,7 +510,7 @@ function dosingTask( data ) {
 				} else {
 
 					// Get stand status 
-					utils.queue_and_send_instr_cmd( stand, "stat", 
+					utils.queue_and_send_instr_cmd( stand, "stat", data.fuse_ms,
 						function(stand_status) { // Success
 							if ( data.stand_ok_for_dosing(data,stand_status)) {
 								if (data.dosed[0] == 0) {
@@ -455,7 +519,7 @@ function dosingTask( data ) {
 								}
 								// Send command to dose.
 								var disp_cmd = "disp " + data.pump_num[data.phase] + " " + data.ml_per_iter;
-								utils.queue_and_send_instr_cmd( dosing, disp_cmd, 
+								utils.queue_and_send_instr_cmd( dosing, disp_cmd, 0,
 									function(dosing_status) { // Success
 										data.is_active = true;
 										data.interval_remaining = data.inter_interval_sec;
@@ -639,6 +703,108 @@ function serverTask( data ) {
 	});
 }
 
+// Handle a successful or bad attempt to contact a  unit.
+function handleUnitCheckResult( data, unit, success, value )
+{
+	if (success) {
+		unit.num_good++;
+	} else {
+		unit.num_bad++;
+	}
+	var reported = unit.num_good + unit.num_bad;
+
+	if (data.debug) {
+		console.log("UNIT CHECK: result: addr="+unit.address+", success="+success+", good/bad=("+unit.num_good+","+unit.num_bad+"), value="+JSON.stringify(value));
+	}
+
+	// If there is a handle_status routine, call it.  This may log items from the status 
+	// to unit-specific streams.
+	if (unit.handle_status && success) {
+		unit.handle_status( unit.address, unit.cmd, value );
+	}
+
+	var now = new Date().getTime();
+	var live_sec = (now - unit.last_store_ms)/1000;
+	if (live_sec > data.store_interval_sec) {
+		unit.last_store_ms = now;
+		if (data.debug) {
+			console.log("UNIT CHECK: "+ new Date().toLocaleTimeString() + ": store for addr="+unit.address+", good/bad=("+unit.num_good+","+unit.num_bad+")");
+			var unit_check = data.utils.db.get("unit_check");
+			var rec = {
+				module_name: unit.module_name,
+				address: unit.address,
+				cmd: unit.cmd,
+				num_good: unit.num_good,
+				num_bad: unit.num_bad
+			};
+			unit_check.insert( rec, {w: 0} );
+		}
+		unit.num_good = 0;
+		unit.num_bad = 0;
+	}
+
+	scheduleIter(data,false); // Never retry.
+}
+
+
+// Execute a periodic unit check.
+function unitCheck( data ) {
+
+	var utils = data.utils;
+	var instrs = data.instrs;
+
+	if (data.waiting) {
+		// In an async chain.  Don't restart on timer.
+		return;
+	}
+
+	// Set waiting to indicate that all pre-return scheduleIter()'s are valid.
+	data.waiting = true; 
+
+	// Refresh data.
+	data.utils.db.get('monitors').find( 
+		{name: data.name, system: data.system_name}, 
+		'-_id', 
+		function( err, monitor_obj ) {
+
+		if (err) {
+			console.log("MON: ERROR: Failed reading settings for \'"+data.name+"\' during iter.");
+		}
+		if (monitor_obj && (monitor_obj.length > 0)) {
+			Object.assign( data, monitor_obj[0] );
+		}
+
+		// If disabled, do nothing, but check if enabled in a while.
+		if (!data.enabled) {
+			scheduleIter(data,false);
+			return;
+		}
+
+		var handled = false;
+
+		var iunit = data.next_unit;
+		var unit = data.units[iunit];
+		if (unit != undefined) {
+			data.next_unit = (data.next_unit + 1) % data.units.length;
+			handled = true;
+			var instr = utils.get_instr_by_type( instrs, unit.module_name );
+			utils.queue_and_send_instr_cmd( instr, unit.cmd, data.fuse_ms,
+				function(status) { // Success
+					handleUnitCheckResult( data, unit, true, status );
+				},
+				function(error) { // Error
+					handleUnitCheckResult( data, unit, false, error );
+				}
+			);
+		}
+
+		if (!handled) {
+			scheduleIter(data,false);
+		}
+	});
+}
+
+
 // Function to begin an scheduled pump shutdown.
 // Options:
 // 
@@ -660,7 +826,7 @@ function startScheduledShutdownX( data, option, duration_min, successFunc, error
 	var ph_opt = (option >> 3);
 	var duration_sec = (duration_min * 60);
 	var cmd = "tshut "+duration_sec+" "+main_opt+" "+ph_opt;
-	utils.queue_and_send_instr_cmd( stand, cmd,
+	utils.queue_and_send_instr_cmd( stand, cmd, 0,
 		function(status) { // Success
 			data.is_active = false;
 			successFunc();
@@ -680,7 +846,7 @@ function startScheduledShutdown( data, option, duration_min, successFunc, errorF
 	var power = utils.get_instr_by_type( instrs, "power" );
 
 	var cmd = "off 2";
-	utils.queue_and_send_instr_cmd( power, cmd,
+	utils.queue_and_send_instr_cmd( power, cmd, 0,
 		function(status) { // Success
 			data.is_active = false;
 			successFunc();
@@ -695,7 +861,7 @@ function endScheduledShutdown( data, option, successFunc, errorFunc ) {
 	var power = utils.get_instr_by_type( instrs, "power" );
 
 	var cmd = "on 2";
-	utils.queue_and_send_instr_cmd( power, cmd,
+	utils.queue_and_send_instr_cmd( power, cmd, 0,
 		function(status) { // Success
 			data.is_active = false;
 			successFunc();
@@ -712,7 +878,7 @@ function fugeLightOn( data, option, duration_min, successFunc, errorFunc ) {
 	var power = utils.get_instr_by_type( instrs, data.target_instr_type );
 
 	var cmd = "on "+option;
-	utils.queue_and_send_instr_cmd( power, cmd,
+	utils.queue_and_send_instr_cmd( power, cmd, 0,
 		function(status) { // Success
 			data.is_active = false;
 			successFunc();
@@ -727,7 +893,7 @@ function fugeLightOff( data, option, successFunc, errorFunc ) {
 	var power = utils.get_instr_by_type( instrs, data.target_instr_type );
 
 	var cmd = "off "+option;
-	utils.queue_and_send_instr_cmd( power, cmd,
+	utils.queue_and_send_instr_cmd( power, cmd, 0,
 		function(status) { // Success
 			data.is_active = false;
 			successFunc();

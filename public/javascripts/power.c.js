@@ -10,14 +10,21 @@ power.updateStatus = function ()
     if (page.waiting_status) {
 		return;
 	}
+
+	var fuse_ms = 5*1000;
+
 	page.waiting_status = 1;
 	page.debugMsg("Sending power_status cmd");
-	$.getJSON( '/power_status/'+page.instr_name, function(data) { page.handleStatus( data ) } );
+	$.getJSON( '/power_status/'+page.instr_name+"/"+fuse_ms, function(data) { page.handleStatus( data ) } );
 }
 
 // Event handler for switch press.
 power.switchChange = function (event) {
 	var page = event.data.page;
+
+	if (!page.initial_status_done) {
+		return;
+	}
 
 	var elem = event.target;
 	while (!elem.id) {
@@ -48,6 +55,7 @@ power.handleStatus = function( data )
 				$('#P'+i+" :checkbox").prop('checked', data.on[i]);
 			}
 			page.goodUpdate();
+			page.initial_status_done = true; 
 		}
 	} else if (data.error == 429) {
 		page.debugMsg("Too busy for command");
@@ -118,6 +126,7 @@ $(document).ready(function() {
 		return
 	}
 	page.instr_name = instr_elem.value;
+	power.initial_status_done = false;
 
 	// Setup
 	var power_cbs = $('.rc_one_switch_table :checkbox');

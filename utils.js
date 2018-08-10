@@ -50,6 +50,8 @@ var instr_route_names = [
 	"fixture",
 	"power",
 	"stand",
+	"ro_res",
+	"dosing"
 ];
 var instr_routes = [];
 
@@ -299,9 +301,52 @@ function http_wrap (msg) {
 // Indexed by URL.
 // Each queue is an array of functions.
 var instr_cmd_queue = [];
+var next_queue_id = 1;
 var debug_queue = 2;
+var cmd_result_cache = [];
 
-function queue_instr_cmd( instr, func, res )
+// Looks in the cache for a result for the given instr/cmd pair
+// that is within 'fuse' ms. If fuse is not positive, never matches.
+function query_cache( instr, cmd, fuse )
+{
+	if (fuse <= 0) {
+		return undefined;
+	}
+	var key = instr.name + ":" + cmd;
+	var cval = cmd_result_cache[key];
+	if (!cval) {
+		return undefined;
+	}
+
+	var now = new Date().getTime();
+	if ((now - cval.time) < fuse) {
+		return cval.result;
+	} else {
+		return undefined;
+	}
+}
+
+function clear_cache_for_instr( instr )
+{
+	var keys = cmd_result_cache.keys();
+	for ( var ikey=0; ikey < keys.length; ikey++ ) {
+		var key = keys[ikey];
+		var keyInstr = key.split(":");
+		if (keyInstr && (instr.name == keyInstr)) {
+			cmd_result_cache.splice(key,1);
+		}
+	}
+}
+
+
+function cache_cmd_rslt( instr, cmd, result )
+{
+	var key = instr.name + ":" + cmd;
+	cmd_result_cache[key] = { result: result, time: new Date().getTime() };
+}
+
+
+function queue_instr_cmd( instr, cmd, fuse, func, res )
 {
 	var url = instr.address;
 	var queue = instr_cmd_queue[url];
@@ -310,6 +355,22 @@ function queue_instr_cmd( instr, func, res )
 		instr_cmd_queue[url] = queue;
 	}
 
+	var queued_func = {
+		func: func, 
+		instr: instr, 
+		time_queued: new Date().getTime(), 
+		id: next_queue_id, 
+		executed: false,
+		cached_result: query_cache( instr, cmd, fuse )
+	};
+	next_queue_id++;
+
+	// If we get a cache hit, call func immediately.
+	if (queued_func.cached_result) {
+		func( queued_func );
+		return;
+	}
+	
 	if ((res !== undefined) && (queue.length > 0)) {
 		// If given a response when the queue is not empty, respond with 
 		// code 429 : Too Many Requests.
@@ -323,15 +384,17 @@ function queue_instr_cmd( instr, func, res )
 		return;
 	}
 
-	queue.push( func );
+
+	queue.push( queued_func );
 	if (queue.length == 1) {
 		if (debug_queue) {
 			console.log("QUEUE: Executing command immediately for " + instr.name);
 		}
-		func();
+		queued_func.executed = true;
+		func( queued_func );
 	} else {
 		// Return, expecting that the next function on the queue
-		// to return will call inst_cmd_done().
+		// to return will call instr_cmd_done().
 		if (debug_queue) {
 			console.log("QUEUE: Queing command for " + instr.name);
 		}
@@ -340,20 +403,77 @@ function queue_instr_cmd( instr, func, res )
 
 // A queued command has completed.
 // Remove it from the head of the queue, and call any next command.
-function instr_cmd_done( instr )
+function instr_cmd_done( instr, queued_func )
 {
 	var url = instr.address;
 	var queue = instr_cmd_queue[url];
-	queue.shift();
+
+	var unqueued = false;
+
+	// If given a specific queued_func, find that one and remove it.
+	// Otherwise, remove the first
+	if (queued_func != undefined) {
+		for ( var iqueue=0; iqueue < queue.length; iqueue++ ) {
+			if (queued_func.id == queue[iqueue].id) {
+				queue.splice(iqueue,1);
+				unqueued = true;
+				break;
+			}
+		}
+	} else {
+		queue.shift();
+		unqueued = true;
+	}
+
 	if (debug_queue) {
-		console.log("QUEUE: command done.  "+queue.length+" commands left for "+instr.name);
+		if (unqueued) {
+			console.log("QUEUE: command done.  "+queue.length+" commands left for "+instr.name);
+		} else {
+			console.log("QUEUE: command done. Did not find cmd ID "+queued_func.id+" in queue. Leaving "+queue.length+" commands left for "+instr.name);
+		}
 	}
 	if (queue.length > 0) {
-		if (debug_queue) {
-			console.log("QUEUE: Executing cmd off queue for "+instr.name);
+		// Execute the first  unexecuted command off the queue.
+		// Marking as executed prevents us from re-executing commands that will eventually 
+		// be removed as timed out.
+		for ( var iqueue=0; iqueue < queue.length; iqueue++ ) {
+			if (!queue[iqueue].executed) {
+				if (debug_queue) {
+					console.log("QUEUE: Executing cmd off queue for "+instr.name);
+				}
+				queue[iqueue].executed = true;
+				queue[iqueue].func( queue[iqueue] );
+				break;
+			}
 		}
-		queue[0]();
 	}
+}
+
+// Removes old queued funcs.
+// There is no failure func to call: something went wrong, and they were never removed from the queue as complete.
+function purge_timed_out_funcs() {
+
+	var timeout_ms = 30 * 1000;
+
+	var now = new Date().getTime();
+
+	for ( var iqueues; iqueues < instr_cmd_queue.length; iqueues++ ) {
+		var queue = instr_cmd_queues[iqueues];
+		for ( var iqueue=0; iqueue < queue.length; ) {
+			if ((now - queue[iqueue].time_queued) > timeout_ms) {
+				if (debug_queue) {
+					console.log("QUEUE: Remove command for \'"+queue[iqueue].instr+"\' because it timed out on the queue.");
+				}
+				queue.splice( iqueue, 1 );
+			} else {
+				iqueue++;
+			}
+		}
+	}
+}
+
+function start_queue_monitor() {
+	setTimeout( function() { purge_timed_out_funcs(); }, 30*1000 );
 }
 
 function send_instr_cmd_http( instr, cmd, successFunc, failureFunc ) 
@@ -375,6 +495,44 @@ function send_instr_cmd_http( instr, cmd, successFunc, failureFunc )
 			}
 	);
 }
+
+
+var instr_cmd_cache = [];
+
+// Store the last successful result for an instrument command.
+function cache_instr_cmd_rslt( queued_func, result ) {
+	if ((queued_func == undefined) || ( queued_func.cmd == undefined) || (queued_func.instr == undefined)) {
+		return;
+	}
+
+	// Keys for the cache are "instr:cmd"
+	var now = new Date().getTime();
+	var key = "" + queued_func.instr + ":" + queued_func.cmd;
+	instr_cmd_cache[key] = { result: result, time: now };
+}
+
+// Return a cached result for the given instr+cmd if it was stored within timeout.
+// If not, return  undefined.
+function get_cached_instr_cmd_rslt( instr, cmd, fuse_ms ) {
+	
+	if ((instr == undefined) || (instr == "") || (cmd == undefined) || (cmd == "")) {
+		return undefined;
+	}
+
+	var key = "" + instr + ":" + cmd;
+	var cached = instr_cmd_cache[key];
+	if (cached == undefined) {
+		return undefined;
+	}
+	var now = new Date().getTime();
+	delta = (now - cached.time);
+	if ( (delta >= 0) && (delta < fuse_ms)) {
+		return cached.result;
+	} else {
+		return undefined;
+	}
+}
+
 
 // Parses a reply with a leading length.
 // Returns true if it is "complete" which is either when
@@ -460,13 +618,17 @@ function parseReplyLines( state, str )
 // Send a command over a socket to an instrument, and parse good responses
 // with the given function.  The 'state' variable's content is dependent on parseFunc.
 // Call either the success or failure functions depending on the result.
-function send_instr_cmd_proto( instr, cmd, parseFunc, state, successfunc, failurefunc ) 
+function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, successfunc, failurefunc ) 
 {
 	var addr = instr.address;
 	var url = addr.split(':');
 	var client = new net.Socket();
 	var success = false;
 	var result = "";
+
+	if (queued_func) {
+		queued_func.cmd = cmd;
+	}
 
 	client.setTimeout(3000);
 	client.connect( url[1], url[0], function() {
@@ -509,6 +671,7 @@ function send_instr_cmd_proto( instr, cmd, parseFunc, state, successfunc, failur
 				} else {
 					result = new Object;
 				}
+				cache_instr_cmd_rslt( queued_func, result );
 				successfunc( result );
 			} catch (err) {
 				console.log("ERROR: Caught while processing error results from \'"+cmd+"\': "+err);
@@ -517,7 +680,7 @@ function send_instr_cmd_proto( instr, cmd, parseFunc, state, successfunc, failur
 		} else {
 			failurefunc( state.result );
 		}
-		instr_cmd_done( instr );
+		instr_cmd_done( instr, queued_func );
 		state.connected = false;
 		client.setTimeout(0);
 		client.end();
@@ -530,7 +693,7 @@ function send_instr_cmd_proto( instr, cmd, parseFunc, state, successfunc, failur
 		success = false;
 		if (client.connecting) {
 			failurefunc( state.result );
-			instr_cmd_done( instr );
+			instr_cmd_done( instr, queued_func );
 		}
 		client.setTimeout(0);
 		state.connected = false;
@@ -543,23 +706,44 @@ function send_instr_cmd_proto( instr, cmd, parseFunc, state, successfunc, failur
 // send a command to an instrument directly as a TCP client.
 // call either the success or failure functions depending on the result.
 // Expect a fixed length response.
-function send_instr_cmd( instr, cmd, successFunc, failureFunc ) 
+function send_instr_cmd( instr, cmd, queued_func, successFunc, failureFunc ) 
 {
+	// Clear any cached result for the entire instr before sending.
+	clear_cache_for_instr(instr);
+	
 	var state = {nread: 0, content_len: -1, result: "", connected: false};
-	send_instr_cmd_proto( instr, cmd, parseFixedLengthReply, state, successFunc, failureFunc );
+	send_instr_cmd_proto( instr, cmd, queued_func, parseFixedLengthReply, state, successFunc, failureFunc );
 }
 // send a command to an instrument directly as a TCP client.
 // call either the success or failure functions depending on the result.
 // Expect a series of lines terminated with \n, and \n\n at the end of the data.
-function send_instr_cmd_lines( instr, cmd, successfunc, failurefunc ) 
+function send_instr_cmd_lines( instr, cmd, meta, successfunc, failurefunc ) 
 {
 	var state = {nread: 0, accum: "", result: {lines: [] }, connected: false};
-	send_instr_cmd_proto( instr, cmd, parseReplyLines, state, successFunc, failureFunc );
+	send_instr_cmd_proto( instr, cmd, meta, parseReplyLines, state, successFunc, failureFunc );
 }
 
-function queue_and_send_instr_cmd( instr, cmd, successfunc, failurefunc, res )  {
-	queue_instr_cmd( instr, function() {
-		send_instr_cmd( instr, cmd, successfunc, failurefunc );
+function queue_and_send_instr_cmd( instr, cmd, fuse, successfunc, failurefunc, res )  {
+	queue_instr_cmd( instr, cmd, fuse, function(queued_func) {
+		if (queued_func.cached_result) {
+			if (debug_queue) {
+				console.log("QUEUE: Returning cached result for "+instr.name+" cmd \'"+cmd+"\': "+JSON.stringify(queued_func.cached_result));
+			}
+			successfunc(queued_func.cached_result);
+		} else {
+			send_instr_cmd( instr, cmd, queued_func, 
+				function(rslt) {
+					// Cache the result and pass it on.
+					cache_cmd_rslt( instr, cmd, rslt )
+					successfunc(rslt);
+				}, 
+				function (error) {
+					// Clear cache, then pass it on.
+					clear_cache_for_instr(instr);
+					failurefunc(error);
+				}
+			);
+		}
 	}, res );
 }
 
@@ -671,6 +855,7 @@ module.exports = {
 		dust.helpers.partial_indirect = partial_indirect_helper;
 	},
 	load_instr_mods: load_instr_mods,
+	start_queue_monitor: start_queue_monitor,
 	get_instr_mod: get_instr_mod,
 	get_instr_info: get_instr_info,
 	get_instr_by_type: get_instr_by_type,
@@ -693,5 +878,8 @@ module.exports = {
 	get_monitor: get_monitor,
 	get_monitors: get_monitors,
 	compare_times: compare_times,
-	start_query_server: start_query_server
-};
+	start_query_server: start_query_server,
+	query_cache: query_cache,
+	clear_cache_for_instr: clear_cache_for_instr,
+	cache_cmd_rslt: cache_cmd_rslt
+}
