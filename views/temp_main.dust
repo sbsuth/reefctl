@@ -1,5 +1,5 @@
 {>"master" /}
-{<title}: Temperature Controller{/title}
+{<title}: Temp Controller{/title}
 {<bodyContent}
 <input type=hidden id=instr_name value={instr_name} />
 <div class="container-fluid outer-container">
