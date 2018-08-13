@@ -33,10 +33,14 @@
 								<tr class=x_row>
 									<td class="w_30">{label}</td>
 									<td>
-										<div class="input-group input-group-sm">
-											<input type="text" class="form-control" id=monitor-{field}-{name}-{type}>
-											<span class="input-group-btn"> <button class="btn btn-default" type="button" id="monitor-{field}-{name}-{type}-button" onclick='monitors.setValue(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
-										</div><!-- /input-group -->
+										{?link}
+											<a href={href} class="btn btn-primary active" width=40>{link}</a>
+										{:else}
+											<div class="input-group input-group-sm">
+												<input type="text" class="form-control" id=monitor-{field}-{name}-{type}>
+												<span class="input-group-btn"> <button class="btn btn-default" type="button" id="monitor-{field}-{name}-{type}-button" onclick='monitors.setValue(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
+											</div><!-- /input-group -->
+										{/link}
 									</td>
 								</tr>
 							{/view_settings}

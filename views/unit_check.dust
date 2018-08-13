@@ -1,0 +1,32 @@
+{>"master" /}
+{<title}: Unit Check{/title}
+{<bodyContent}
+<input type=hidden id=system_name value={system_name} />
+<div class="container-fluid outer-container">
+	<div class="container title_row">
+		<table width=100%><tr>
+		<td width=90%><h3>Unit Check</h3></td>
+		<td> <div class="checkbox checkbox-primary">
+				<input id="monitor_cb" type="checkbox" checked="">
+				<label style="padding: 0px;">Monitor</label>
+			</div>
+		</td>
+		</tr></table>
+	</div><!--container-->
+	<div class="container-fluid">
+		<div class="row">
+
+			<div class="col-xs-12 col-sm-6">
+				<p>Stuff</p>
+		</div><!--row-->
+	</div><!--container-->
+	<div class="container" >
+		<div class="alert alert-warning" aria-hidden="true" hidden=true id=alert_box>
+		 <table><tr>
+			 <td><p/></td>
+			 <td><button type="button" aria-hidden="true" onclick="temp.clearError()">&times;</button></td>
+		</tr></table>
+		</div>
+	</div>
+</div><!--container-->
+{/bodyContent}
