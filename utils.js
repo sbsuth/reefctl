@@ -631,11 +631,14 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 	}
 
 	client.setTimeout(3000);
+	client.connecting = false;
+	state.connecting = true;
 	client.connect( url[1], url[0], function() {
 		if (debug_queue > 1) {
 			console.log("QUEUE: Client connected. Sending command.");
 		}
 		state.connected = true;
+		state.connecting = false;
 		client.write(cmd+"\n");
 	});
 
@@ -691,7 +694,8 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 		}
 		state.result = "Timeout sending command '"+cmd+"'";
 		success = false;
-		if (client.connecting) {
+		if (state.connecting) {
+			state.connecting = false;
 			failurefunc( state.result );
 			instr_cmd_done( instr, queued_func );
 		}
@@ -711,7 +715,7 @@ function send_instr_cmd( instr, cmd, queued_func, successFunc, failureFunc )
 	// Clear any cached result for the entire instr before sending.
 	clear_cache_for_instr(instr);
 	
-	var state = {nread: 0, content_len: -1, result: "", connected: false};
+	var state = {nread: 0, content_len: -1, result: "", connecting: false, connected: false};
 	send_instr_cmd_proto( instr, cmd, queued_func, parseFixedLengthReply, state, successFunc, failureFunc );
 }
 // send a command to an instrument directly as a TCP client.
@@ -849,6 +853,182 @@ function start_query_server()
 	server.listen(3001, '10.10.2.2');
 }
 
+var base_zwave_url = 'http://127.0.0.1:8123/api/';
+
+function send_zwave_cmd( entity, cmd, successFunc, errorFunc ) {
+	var url = base_zwave_url + cmd;
+	request.post(
+		{ url: url,
+		  json: true,
+		  timeout: 1000,
+		  body: {
+			entity_id: entity
+		  }
+		},
+		function(error,response,body) {
+			if (response.statusCode == 200) {
+				if (successFunc) {
+					successFunc(body); // Nothing in these...
+				}
+			} else {
+				if (errorFunc) {
+					errorFunc(body.message); 
+				}
+			}
+		}
+	).on('error',function(err) {console.log("error");});
+}
+
+
+function get_zwave_state( state, entity, successFunc, errorFunc ) {
+	var url = base_zwave_url + "states/" + entity;
+	request.get(
+		{ url: url,
+		  json: true,
+		  timeout: 1000
+		},
+		function(error,response,body) {
+			// Use response.statusCode.  'error' doesnt get set.
+			if (response.statusCode == 200) {
+				if (successFunc) {
+					successFunc(body[state]);
+				}
+			} else {
+				if (errorFunc) {
+					errorFunc(body.message);
+				}
+			}
+		}
+	);
+}
+
+
+var entity_power_status = {};
+
+function get_entity_power_status(entity) {
+	var eps = entity_power_status[entity];
+	if (eps != undefined) {
+		return eps;
+	}
+	eps = {
+		state: "inactive",
+		entity: "",
+		num_retries: 0,
+		max_retries: 5,
+		retry_interval_ms: 30 * 1000,
+		off_time_ms: 5 * 1000,
+		debug: 1
+	};
+	entity_power_status[entity] = eps;
+	return eps;
+}
+
+function power_cycle_fsm( eps ) {
+
+	switch (eps.state) {
+		case "inactive":
+		case "given_up" :
+			// Do nothing.
+			break;
+		case "start":
+			// Send turn_off
+			if (eps.debug) { console.log("POWER_CYCLE: "+eps.entity+": sending turn_off"); }
+
+			send_zwave_cmd( eps.entity, "services/switch/turn_off",
+				function (resp) {
+					// Verify off after 1 sec.
+					setTimeout( function() {
+						if (eps.debug) { console.log("POWER_CYCLE: "+eps.entity+": sending verify off"); }
+						get_zwave_state( "state", eps.entity, 
+							function(state) {
+								if (state == "off") {
+									if (eps.debug) { console.log("POWER_CYCLE: "+eps.entity+": scheduling turn_on");}
+									eps.state = "turn_on";
+									setTimeout( function() {power_cycle_fsm(eps)}, eps.off_time_ms );
+								} else {
+									console.log("HEY: state="+state);
+									retry_power_cycle(eps);
+								}
+							},
+							function (err) {
+								if (eps.debug) { console.log("POWER_CYCLE: "+eps.entity+": got error \'"+err+"\'"); }
+								retry_power_cycle(eps);
+
+							});
+					}, 1000 );
+				},
+				function (err) {
+					retry_power_cycle(eps);
+				});
+			break;
+		case "turn_on" :
+			// Send turn_on
+			if (eps.debug) { console.log("POWER_CYCLE: "+eps.entity+": sending turn_on");}
+			send_zwave_cmd( eps.entity, "services/switch/turn_on",
+				function (resp) {
+					// Verify on after 1 sec.
+					setTimeout( function() {
+						if (eps.debug) { console.log("POWER_CYCLE: "+eps.entity+": sending verify on");}
+						get_zwave_state( "state", eps.entity, 
+							function(state) {
+								if (state == "on") {
+									// Done.
+									if (eps.debug) { console.log("POWER_CYCLE: "+eps.entity+": completed successfully");}
+									reset_power_cycle(eps.entity);
+								} else {
+									retry_power_cycle(eps);
+								}
+							},
+							function (err) {
+								retry_power_cycle(eps);
+
+							});
+					}, 1000 )
+				},
+				function (err) {
+					retry_power_cycle(eps);
+				});
+			break;
+	}
+}
+
+function retry_power_cycle(eps) {
+
+	eps.num_retries++;
+	if (eps.num_retries > eps.max_retries) {
+		// If we exceed the max number of retries, go into a "given_up" state.
+		// Send a "turn_on" for good measure.
+		send_zwave_cmd( eps.entity, "turn_on" );
+		eps.state = "given_up";
+		if (eps.debug) { console.log("POWER_CYCLE: "+eps.entity+": giving up after "+eps.num_retries+" retries") }
+		return;
+	}
+
+	// Try again, leaving the state the same.
+	if (eps.debug) {console.log("POWER_CYCLE: "+eps.entity+": wait for retry #"+eps.num_retries+" in state \'"+eps.state+"\'") }
+	setTimeout( function () { power_cycle_fsm(eps); }, eps.retry_interval_ms );
+}
+
+function req_power_cycle( entity ) {
+	var eps = get_entity_power_status(entity);
+	if (eps.state == "inactive") {
+		eps.entity = entity;
+		eps.state = "start";
+		power_cycle_fsm(eps);
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+function reset_power_cycle( entity ) {
+	var eps = get_entity_power_status(entity);
+	eps.entity = "";
+	eps.num_retries = 0;
+	eps.state = "inactive";
+}
+
+
 module.exports = {
 	init_dust_helpers: function( dust_in ) {
 		dust = dust_in;
@@ -881,5 +1061,7 @@ module.exports = {
 	start_query_server: start_query_server,
 	query_cache: query_cache,
 	clear_cache_for_instr: clear_cache_for_instr,
-	cache_cmd_rslt: cache_cmd_rslt
+	cache_cmd_rslt: cache_cmd_rslt,
+	req_power_cycle: req_power_cycle, 
+	reset_power_cycle: reset_power_cycle
 }

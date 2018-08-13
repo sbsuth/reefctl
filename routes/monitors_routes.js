@@ -34,6 +34,10 @@ function decode_value( str, type ) {
 		case 'str':
 			value = str;
 			break;
+		case 'time':
+			// A time from Date() in ms.
+			value = new Date(str).toLocaleString();
+			break;
 		case 'tod':
 			// Value is [hour,min], format is hour:min
 			var vals = str.split(":");
@@ -322,6 +326,57 @@ router.get('/monitors/:system_name/', login.validateUser, function(req, res) {
 				},
 			]
 		},
+		unit_check: {
+			order: 4,
+			view_settings: [
+				{	label: "Auto Power Cycle",
+					field: "auto_power_cycle",
+					type:  "bool"
+				},
+				{	label: "Debug",
+					field: "debug",
+					type:  "bool"
+				},
+				{	label: "",
+					link: "Show Details",
+					href: "/unit_check/"+system_name
+				},
+			],
+			view_status: [
+				{	label: "#Good Units:",
+					field: "cur_good",
+					type:  "int"
+				},
+				{	label: "#Bad Units:",
+					field: "cur_bad",
+					type:  "int"
+				},
+				{	label: "Success Rate:",
+					field: "pct_recent_good",
+					type:  "int"
+				},
+				{	label: "Last Bad Unit:",
+					field: "last_bad_addr",
+					type:  "str"
+				},
+				{	label: "Last Bad At:",
+					field: "last_bad_time",
+					type:  "time"
+				},
+				{	label: "Last Power Cycle Addr:",
+					field: "last_power_cycle_addr",
+					type:  "str"
+				},
+				{	label: "Last Power Cycle Sw:",
+					field: "last_power_cycle_entity",
+					type:  "str"
+				},
+				{	label: "Last Power Cycle At:",
+					field: "last_power_cycle_time",
+					type:  "time"
+				},
+			]
+		},
 	};
 
 	get_monitors( utils, system_name, function( err, monitor_objs ) {
@@ -342,6 +397,22 @@ router.get('/monitors/:system_name/', login.validateUser, function(req, res) {
 		}
 	} );
 });
+
+router.get('/unit_check/:system_name/', login.validateUser, function(req, res) {
+	var session = req.session;
+	var system_name = req.params.system_name;
+	var utils = req.utils;
+
+	if (debug_monitors) {
+		console.log("UNIT_CHECK: get : "+system_name);
+	}
+
+	var d = utils.get_master_template_data(req);
+	d.load_javascript.push( "/js/monitors.c.js" );
+	d.system_name = system_name;
+	res.render("unit_check", d );
+});
+
 
 function init_session( req )
 {

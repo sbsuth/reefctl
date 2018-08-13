@@ -1,4 +1,3 @@
-
 // Shared settings for all topup monitors.
 var topup_settings = {
 	init_data:					initTopupData,
@@ -49,6 +48,8 @@ var unit_check_settings = {
 	post_timeout_interval_sec:	10,
 	store_interval_sec:			5 * 60,
 	fuse_ms:					5 * 1000,
+	power_cycle_after_ms:		5 * 60 * 1000,
+	power_cycle_after_min_bad:	5,
 	debug:						2,
 	daytime_only:				false
 };
@@ -213,6 +214,8 @@ function start_monitor( monitor, system, utils ) {
 
 function startup( utils ) {
 	
+	// Start Home Assistant connection
+	//startup_home_assistant(utils);
 
 	// Initialize global monitor types.
 	monitor_types = create_monitor_types();
@@ -299,6 +302,7 @@ function initUnitCheckData() {
 	// Unit tags are the addresses, so we check once per address.
 	data.units = []; // An array of units to be monitored.  Indexed by integer.
 	data.handledAddrs = []; // A record of which addresses are handled.  Index by string.
+	data.shutdownSwitches = [];
 	var now = new Date().getTime();
 	for ( var iinstr=0; iinstr < instrs.length; iinstr++ ) {
 		var instr = instrs[iinstr];
@@ -314,12 +318,33 @@ function initUnitCheckData() {
 			handle_status: mod.handle_status,
 			last_store_ms: now,
 			num_good: 0,
-			num_bad: 0
+			num_bad: 0,
+			cur_good: undefined
 		};
+		if (instr.shutdown_switch) {
+			if (data.shutdownSwitches[instr.shutdown_switch] == undefined) {
+				data.shutdownSwitches[instr.shutdown_switch] = [mod_check];
+			} else {
+				data.shutdownSwitches[instr.shutdown_switch].push(mod_check);
+			}
+		}
 		data.handledAddrs[instr.address] = mod_check;
 		data.units.push(mod_check);
 	}
 	data.next_unit = (data.units.length > 0) ? 0 : -1;
+
+	// Stats for display
+	data.cur_good = 0;
+	data.cur_bad = 0;
+	data.recent_good = [];
+	data.num_recent_good = 0;
+	data.num_recent_bad = 0;
+	data.pct_recent_good = undefined;
+	data.last_bad_addr = undefined;
+	data.last_bad_time = undefined;
+	data.last_power_cycle_entity = undefined;
+	data.last_power_cycle_addr = undefined;
+	data.last_power_cycle_time = undefined;
 }
 	
 function topupTask( data ) {
@@ -703,14 +728,118 @@ function serverTask( data ) {
 	});
 }
 
+function checkIfPowerCycleNeeded( data, unit, success )
+{
+	if (!unit.shutdown_switch) {
+		return;
+	}
+
+	if (success) {
+
+		if (unit.first_failure_ms != undefined) {
+			if (data.debug) {
+				console.log("UNIT CHECK: Got good result for "+unit.address+": power cycle countdown reset.");
+			}
+		}
+				
+		// Clear string of failures.
+		unit.first_failure_ms = undefined;
+
+		// Check if all units on the same switch are free of failures, and reset it
+		// if so.  This allows a recovery on an external restart if we failed.
+		var units = data.shutdownSwitches[unit.shutdown_switch];
+		var all_good = true;
+		for ( var iunit=0; iunit < units.length; iunit++ ) {
+			var unit = units[iunit];
+			if (unit.first_failure_ms) {
+				all_good = false;
+			}
+		}
+		if (all_good) {
+			data.utils.reset_power_cycle( unit.shutdown_switch );
+		}
+
+	} else {
+		var now = new Date().getTime();
+		if (unit.first_failure_ms) {
+			var timeDown = (now - unit.first_failure_ms);
+			if (  (unit.first_failure_ms && (timeDown > data.power_cycle_after_ms))
+			    && (unit.num_bad >= data.power_cycle_after_min_bad)) {
+
+				if (data.debug) {
+					console.log("UNIT CHECK: Failures for "+(timeDown/1000)+" sec.  Power cycling "+unit.shutdown_switch);
+				}
+				data.last_power_cycle_entity = unit.shutdown_switch;
+				data.last_power_cycle_addr = unit.addr;
+				data.last_power_cycle_time = now;
+
+				// Initiate the power cycle.
+				data.utils.req_power_cycle( unit.shutdown_switch );
+
+				// Record the shutdown request in the db.
+				var unit_check = data.utils.db.get("unit_check");
+				var rec = {
+					kind: "power_cycle",
+					module_name: unit.module_name,
+					address: unit.address,
+					cmd: unit.cmd,
+					time_down_sec: timeDown/1000,
+					power_cycle:  unit.shutdown_switch
+				};
+				unit_check.insert( rec, {w: 0} );
+
+				unit.num_good = 0;
+				unit.num_bad = 0;
+				unit.first_failure_ms = undefined;
+			}
+		} else {
+			unit.first_failure_ms = now;
+		}
+	}
+}
+
 // Handle a successful or bad attempt to contact a  unit.
 function handleUnitCheckResult( data, unit, success, value )
 {
+	var now = new Date().getTime();
+
 	if (success) {
 		unit.num_good++;
+		data.num_recent_good++;
 	} else {
 		unit.num_bad++;
+		data.num_recent_bad++;
+		data.last_bad_addr = unit.address;
+		data.last_bad_time = now;
 	}
+	unit.cur_good = success;
+
+	// Update stats.
+	data.cur_good = 0;
+	data.cur_bad = 0;
+	for ( var iunit=0; iunit < data.units.length; iunit++ ) {
+		var aunit = data.units[iunit];
+		if (aunit.cur_good != undefined) {
+			if (aunit.cur_good) {
+				data.cur_good++;
+			} else {
+				data.cur_bad++;
+			}
+		}
+	}
+
+	// Keep a shift reg of success values, and update num_recent_good/bad stats and pct.
+	data.recent_good.unshift(success);
+	while (data.recent_good.length > data.max_recent_good) {
+		var removed = data.recent_good.pop();
+		if (removed) {
+			data.num_recent_good--;
+		} else {
+			data.num_recent_bad--;
+		}
+	}
+	data.pct_recent_good = Math.floor((data.num_recent_good / (data.num_recent_good + data.num_recent_bad)) * 100);
+
 	var reported = unit.num_good + unit.num_bad;
 
 	if (data.debug) {
@@ -723,7 +852,10 @@ function handleUnitCheckResult( data, unit, success, value )
 		unit.handle_status( unit.address, unit.cmd, value );
 	}
 
-	var now = new Date().getTime();
+	if (data.auto_power_cycle) {
+		checkIfPowerCycleNeeded( data, unit, success );
+	}
+
 	var live_sec = (now - unit.last_store_ms)/1000;
 	if (live_sec > data.store_interval_sec) {
 		unit.last_store_ms = now;
@@ -731,6 +863,7 @@ function handleUnitCheckResult( data, unit, success, value )
 			console.log("UNIT CHECK: "+ new Date().toLocaleTimeString() + ": store for addr="+unit.address+", good/bad=("+unit.num_good+","+unit.num_bad+")");
 			var unit_check = data.utils.db.get("unit_check");
 			var rec = {
+				kind: "unit_status",
 				module_name: unit.module_name,
 				address: unit.address,
 				cmd: unit.cmd,
@@ -750,6 +883,7 @@ function handleUnitCheckResult( data, unit, success, value )
 // Execute a periodic unit check.
 function unitCheck( data ) {
 
+  try {
 	var utils = data.utils;
 	var instrs = data.instrs;
 
@@ -802,6 +936,9 @@ function unitCheck( data ) {
 			scheduleIter(data,false);
 		}
 	});
+  } catch (err) {
+	console.log("ERROR: unitCheck: "+err);
+  }
 }
 
 
@@ -1075,7 +1212,6 @@ function ro_fill_ok(data,status) {
 	}
 }
 
-
 module.exports = {
-	startup: startup
+	startup: startup,
 }
