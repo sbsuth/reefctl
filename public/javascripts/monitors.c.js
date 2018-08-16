@@ -38,6 +38,10 @@ function encode_value( val, type ) {
 		case 'str':
 			str = val;
 			break;
+		case 'time':
+			// A time from Date() in ms.
+			str = new Date(val).toLocaleString();
+			break;
 		case 'tod':
 			// Value is [hour,min], format is hour:min
 			str = val[0]+":"+val[1];
