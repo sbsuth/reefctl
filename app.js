@@ -51,6 +51,7 @@ app.use('/js', express.static(__dirname + '/node_modules/bootstrap-checkbox/dist
 app.use('/js', express.static(__dirname + '/node_modules/bootstrap-select/dist/js')); // redirect bootstrap JS
 app.use('/fonts', express.static(__dirname + '/node_modules/bootstrap/fonts')); 
 app.use('/js', express.static(__dirname + '/bower_components/crypto-js')); // redirect crypto-js
+app.use('/js', express.static(__dirname + '/node_modules/chart.js/dist')); // chart.js
 
 
 // Filter to define session.

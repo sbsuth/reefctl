@@ -343,37 +343,37 @@ router.get('/monitors/:system_name/', login.validateUser, function(req, res) {
 				},
 			],
 			view_status: [
-				{	label: "#Good Units:",
+				{	label: "#Good:",
 					field: "cur_good",
 					type:  "int"
 				},
-				{	label: "#Bad Units:",
+				{	label: "#Bad:",
 					field: "cur_bad",
 					type:  "int"
 				},
-				{	label: "Success Rate:",
+				{	label: "Good Rate:",
 					field: "pct_recent_good",
 					type:  "int"
 				},
-				{	label: "Last Bad Unit:",
+				{	label: "Last Bad:",
 					field: "last_bad_addr",
 					type:  "str"
 				},
-				{	label: "Last Bad At:",
+				{	label: "Bad Time:",
 					field: "last_bad_time",
 					type:  "time"
 				},
-				{	label: "Last Power Cycle Addr:",
+				{	label: "Last Dead:",
 					field: "last_power_cycle_addr",
 					type:  "str"
 				},
-				{	label: "Last Power Cycle Sw:",
-					field: "last_power_cycle_entity",
-					type:  "str"
-				},
-				{	label: "Last Power Cycle At:",
+				{	label: "Dead Time:",
 					field: "last_power_cycle_time",
 					type:  "time"
+				},
+				{	label: "PC Switcth:",
+					field: "last_power_cycle_entity",
+					type:  "str"
 				},
 			]
 		},
@@ -408,7 +408,8 @@ router.get('/unit_check/:system_name/', login.validateUser, function(req, res) {
 	}
 
 	var d = utils.get_master_template_data(req);
-	d.load_javascript.push( "/js/monitors.c.js" );
+	d.load_javascript.push( "/js/Chart.min.js" );
+	d.load_javascript.push( "/js/unit_check.c.js" );
 	d.system_name = system_name;
 	res.render("unit_check", d );
 });
