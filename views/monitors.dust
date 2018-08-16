@@ -27,7 +27,7 @@
 				 </div>
 				 <div class="x_content">
 					<div class="row">
-						<div class="col-xs-7">
+						<div class="col-xs-6">
 							<table class="x_table" width=100%>
 							{#view_settings}
 								<tr class=x_row>
@@ -46,10 +46,10 @@
 							{/view_settings}
 							</table>
 						</div>
-						<div class="col-xs-5">
+						<div class="col-xs-6">
 							<table class="x_table" width=100%>
 							{#view_status}
-								<tr class=x_row><td >{label}:</td><td><p id=monitor-{field}-{name}-{type}>(pending)</p></td></tr>
+								<tr class=x_row><td >{label}:</td><td><p id=monitor-{field}-{name}-{type}>(no value)</p></td></tr>
 							{/view_status}
 							</table>
 						</div>
