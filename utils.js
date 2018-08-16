@@ -631,7 +631,7 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 	}
 
 	client.setTimeout(3000);
-	client.connecting = false;
+	state.connected = false;
 	state.connecting = true;
 	client.connect( url[1], url[0], function() {
 		if (debug_queue > 1) {
@@ -678,10 +678,16 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 				successfunc( result );
 			} catch (err) {
 				console.log("ERROR: Caught while processing error results from \'"+cmd+"\': "+err);
-				failurefunc(err);
+				if (!state.failure_reported) {
+					state.failure_reported = true;
+					failurefunc(err);
+				}
 			}
 		} else {
-			failurefunc( state.result );
+			if (!state.failure_reported) {
+				state.failure_reported = true;
+				failurefunc( state.result );
+			}
 		}
 		instr_cmd_done( instr, queued_func );
 		state.connected = false;
@@ -696,7 +702,10 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 		success = false;
 		if (state.connecting) {
 			state.connecting = false;
-			failurefunc( state.result );
+			if (!state.failure_reported) {
+				state.failure_reported = true;
+				failurefunc( state.result );
+			}
 			instr_cmd_done( instr, queued_func );
 		}
 		client.setTimeout(0);
