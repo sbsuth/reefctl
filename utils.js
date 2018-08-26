@@ -328,12 +328,12 @@ function query_cache( instr, cmd, fuse )
 
 function clear_cache_for_instr( instr )
 {
-	var keys = cmd_result_cache.keys();
+	var keys = Object.keys(cmd_result_cache);
 	for ( var ikey=0; ikey < keys.length; ikey++ ) {
 		var key = keys[ikey];
-		var keyInstr = key.split(":");
+		var keyInstr = key.split(":")[0];
 		if (keyInstr && (instr.name == keyInstr)) {
-			cmd_result_cache.splice(key,1);
+			delete cmd_result_cache[key];
 		}
 	}
 }
@@ -473,7 +473,7 @@ function purge_timed_out_funcs() {
 }
 
 function start_queue_monitor() {
-	setTimeout( function() { purge_timed_out_funcs(); }, 30*1000 );
+	setInterval( function() { purge_timed_out_funcs(); }, 30*1000 );
 }
 
 function send_instr_cmd_http( instr, cmd, successFunc, failureFunc ) 
@@ -955,7 +955,6 @@ function power_cycle_fsm( eps ) {
 									eps.state = "turn_on";
 									setTimeout( function() {power_cycle_fsm(eps)}, eps.off_time_ms );
 								} else {
-									console.log("HEY: state="+state);
 									retry_power_cycle(eps);
 								}
 							},
