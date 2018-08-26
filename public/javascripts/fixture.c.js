@@ -204,13 +204,13 @@ function elemOrderToLedId( ielem ) {
 	return -1;
 }
 
-// Given an 8-entry percents array ordered as for the instr,
-// returns a 7-entry array ordered in element order.
+// Given a 12-entry percents array ordered as for the instr,
+// returns an 8-entry array ordered in element order.
 function instrToLocalPcts( ipcts, scale ) {
-	var lpcts = [0,0,0,0,0,0,0];
+	var lpcts = [0,0,0,0,0,0,0,0];
 	for ( var ipct=0; ipct < ipcts.length; ipct++ ) {
 		var lpct = ledIdToElemOrder(ipct);
-		if ((lpct >= 0) && (lpct < 7)) {
+		if ((lpct >= 0) && (lpct < 8)) {
 			var val = ipcts[ipct];
 			if (scale != 0) {
 				val = Math.floor( ((val * 100)/scale) + 0.5 );
@@ -221,13 +221,13 @@ function instrToLocalPcts( ipcts, scale ) {
 	return lpcts;
 }
 
-// Given an 7-entry percents array ordered for display channels,
-// returns a 8-entry array ordered for the instr.
+// Given an 8-entry percents array ordered for display channels,
+// returns a 12-entry array ordered for the instr.
 function localToInstrPcts( lpcts ) {
-	var ipcts = [0,0,0,0,0,0,0,0];
+	var ipcts = [0,0,0,0,0,0,0,0,0,0,0,0];
 	for ( var lpct=0; lpct < lpcts.length; lpct++ ) {
 		var ipct = ledIdToElemOrder(lpct);
-		if ((ipct >= 0) && (ipct < 8)) {
+		if ((ipct >= 0) && (ipct < 12)) {
 			ipcts[ipct] = lpcts[lpct];
 		}
 	}
@@ -290,21 +290,26 @@ fixture.applyPcts = function(event) {
 	// Collect values in instr
 	var vals0 = [fixture.cur_spec,0,0,0,0];
 	var vals1 = [fixture.cur_spec,0,0,0,0];
+	var vals2 = [fixture.cur_spec,0,0,0,0];
 	$("div[id$='pct_spec']").each( function(index) {
 		var input = $(this).find("input");
 		var index = input.data('id');
 		if (index < 4) {
 			vals0[index+1] = input.val();
-		} else {
+		} else if (index < 8) {
 			vals1[(index-4)+1] = input.val();
+		} else {
+			vals2[(index-8)+1] = input.val();
 		}
 	});
 
 	// 2 commands for upper and lower halves of the array.
 	fixture.sendCmd( event, "spcta", vals0, function(response) {
 		fixture.sendCmd( event, "spctb", vals1, function(responve) {
-			fixture.invalidateCmd("gvals");
-			fixture.clearError();
+			fixture.sendCmd( event, "spctc", vals2, function(responve) {
+				fixture.invalidateCmd("gvals");
+				fixture.clearError();
+			});
 		});
 	});
 }
@@ -521,13 +526,13 @@ fixture.updateSpectrum = function( elem, pcts ) {
 	var title_off = -5;
 
 	if (!pcts) {
-		pcts = [10,20,30,40,50,60,70];
+		pcts = [10,20,30,40,50,60,70,80];
 	}
 
 	// Find largest, and clip to 0->100.
 	var ibar;
 	var maxPct  = 0;
-	for ( ibar=0; ibar<7; ibar++ ) {
+	for ( ibar=0; ibar<8; ibar++ ) {
 		if ( Number(pcts[ibar]) > maxPct) {
 			maxPct = pcts[ibar];
 		}
@@ -546,12 +551,12 @@ fixture.updateSpectrum = function( elem, pcts ) {
 	// Set the 'top' style of all labels to the same value.
 	ibar = 0;
 	bars.each( function(index) {
-		if (index < 7) {
+		if (index < 8) {
 			$(this).css( "height", Math.floor( ((pcts[index] * px_bars)/100) + 0.5) );
 			$(this).css( "top", Math.floor(bar_top) );
 		} else {
 			$(this).css( "top", Math.floor(title_off) );
-			$(this).children("p").text( pcts[index-7]+"%");
+			$(this).children("p").text( pcts[index-8]+"%");
 		}
 	});
 }

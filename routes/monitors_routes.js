@@ -398,6 +398,30 @@ router.get('/monitors/:system_name/', login.validateUser, function(req, res) {
 	} );
 });
 
+function objectIdWithTimestamp(timestamp) {
+    // Convert string date to Date object (otherwise assume timestamp is a date)
+    if (typeof(timestamp) == 'string') {
+        timestamp = new Date(timestamp);
+    }
+
+    // Convert date object to hex seconds since Unix epoch
+    var hexSeconds = Math.floor(timestamp/1000).toString(16);
+
+    // Create an ObjectId with that hex timestamp
+    var constructedObjectId = ObjectId(hexSeconds + "0000000000000000");
+
+    return constructedObjectId
+}
+
+function getData(utils) {
+
+	var startDate = new Date("August 16, 2018 20:30:00");
+	var endDate = new Date(startDate.getTime()+(30*1000*60));
+	var start = objectIdWithTimestamp(startDate);
+	var end = objectIdWithTimestamp(endDate);
+	utils.db.getCollection('unit_check').find({address: /\.7:/, _id: {$gt: start, $lt: end}})
+}
+
 router.get('/unit_check/:system_name/', login.validateUser, function(req, res) {
 	var session = req.session;
 	var system_name = req.params.system_name;

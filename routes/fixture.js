@@ -47,7 +47,7 @@ try {
 			var spec = parseInt(arg1);
 			var ichan = parseInt(arg2);
 			var pct = parseInt(arg3);
-			if ((spec == NaN) || (spec > 1) || (spec < 0) || (ichan == NaN) || (pct == NaN) || (ichan < 0) || (ichan > 7) || (pct < 0) || (pct > 100)) {	
+			if ((spec == NaN) || (spec > 1) || (spec < 0) || (ichan == NaN) || (pct == NaN) || (ichan < 0) || (ichan > 11) || (pct < 0) || (pct > 100)) {	
 				utils.send_error( res, "ERROR: Bad args for "+cmd+" cmd: spec="+spec+", ichan="+ichan+", pct="+pct);
 				return;
 			}
@@ -57,6 +57,7 @@ try {
 			break;
 		case 'spcta':
 		case 'spctb':
+		case 'spctc':
 			var spec = parseInt(arg1);
 			var pcts = [parseInt(arg2),parseInt(arg3),parseInt(arg4),parseInt(arg5)];
 			if ((spec == NaN) || (spec > 1)) {
@@ -278,6 +279,12 @@ router.get('/fixture_main/:instr_name', login.validateUser, function(req, res) {
 					id: 1,
 					name: "red",
 					label: "Red"
+				  },
+				  {
+					index: 7,
+					id: 11,
+					name: "strip",
+					label: "Strip"
 				  }
 				 ];
 	res.render("fixture_main", d );
