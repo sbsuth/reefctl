@@ -110,7 +110,7 @@ function create_monitor_types()
 			return true;
 		},
 	};
-	Object.assign( monitors.manual_tank_fill, {daytime_only: false}, topup_settings );
+	Object.assign( monitors.manual_tank_fill, topup_settings, {daytime_only: false}  );
 
 	//
 	// DAILY WATER CHANGE
@@ -770,7 +770,7 @@ function checkIfPowerCycleNeeded( data, unit, success )
 					console.log("UNIT CHECK: Failures for "+(timeDown/1000)+" sec.  Power cycling "+unit.shutdown_switch);
 				}
 				data.last_power_cycle_entity = unit.shutdown_switch;
-				data.last_power_cycle_addr = unit.addr;
+				data.last_power_cycle_addr = unit.address;
 				data.last_power_cycle_time = now;
 
 				// Initiate the power cycle.
