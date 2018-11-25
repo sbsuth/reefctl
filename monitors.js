@@ -93,6 +93,7 @@ function create_monitor_types()
 			return Boolean(!status.float_sw && (status.dist > 5));
 		},
 	};
+	//Object.assign( monitors.salt_res_fill, topup_settings, {daytime_only: false} );
 	Object.assign( monitors.salt_res_fill, topup_settings );
 
 	//
@@ -349,6 +350,7 @@ function initUnitCheckData() {
 	
 function topupTask( data ) {
 
+  try {
 	var utils = data.utils;
 	var instrs = data.instrs;
 
@@ -426,6 +428,9 @@ function topupTask( data ) {
 			}, function(error) {topupCommsFailure( data, error );}
 		);
 	});
+  } catch (err) {
+	console.log("ERROR: topupTask: catch: "+err);
+  }
 }
 
 // Store the fields that record current status.
@@ -444,6 +449,7 @@ function writeDosingData( data ) {
 
 function dosingTask( data ) {
 
+  try {
 	var utils = data.utils;
 	var instrs = data.instrs;
 
@@ -495,12 +501,10 @@ function dosingTask( data ) {
 			return;
 		}
 
-		// If disabled, do nothing, but check if enabled in a while.
-		if (!data.enabled) {
+		if (!data.enabled || (data.daytime_only && !data.utils.is_daytime())) {
 			scheduleIter(data,false);
 			return;
 		}
-
 
 		if (   (!data.started && ((hour < data.start_time[0]) || (min < data.start_time[1])))
 			|| (data.dosed[data.num_phases-1] >= data.ml_per_day) ) {
@@ -585,6 +589,9 @@ function dosingTask( data ) {
 			}, function(error) {dosingCommsFailure( data, error );}
 		);
 	});
+  } catch (err) {
+	console.log("ERROR: dosingTask: catch: "+err);
+  }
 }
 
 // Store the fields that record current status.
@@ -604,6 +611,7 @@ function writeServerTaskData( data ) {
 // Execute tasks scheduled at specific times.
 function serverTask( data ) {
 
+  try {
 	var utils = data.utils;
 
 	if (data.waiting) {
@@ -726,6 +734,9 @@ function serverTask( data ) {
 			scheduleIter(data,false);
 		}
 	});
+  } catch (err) {
+	console.log("ERROR: serverTask: catch: "+err);
+  }
 }
 
 function checkIfPowerCycleNeeded( data, unit, success )
@@ -889,6 +900,9 @@ function unitCheck( data ) {
 
 	if (data.waiting) {
 		// In an async chain.  Don't restart on timer.
+		if (err) {
+			console.log("MON: Skipping unitCheck event because waiting");
+		}
 		return;
 	}
 
@@ -937,7 +951,7 @@ function unitCheck( data ) {
 		}
 	});
   } catch (err) {
-	console.log("ERROR: unitCheck: "+err);
+	console.log("ERROR: unitCheck: catch: "+err);
   }
 }
 

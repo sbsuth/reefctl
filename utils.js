@@ -635,7 +635,7 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 	state.connecting = true;
 	client.connect( url[1], url[0], function() {
 		if (debug_queue > 1) {
-			console.log("QUEUE: Client connected. Sending command.");
+			console.log("QUEUE: Client connected. Sending command \'"+cmd+"\' to "+url[0]);
 		}
 		state.connected = true;
 		state.connecting = false;
@@ -644,7 +644,7 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 
 	client.on('data', function(data) {
 		if (debug_queue) {
-			console.log("QUEUE: Got result from cmd '"+cmd+"': "+data.toString());
+			console.log("QUEUE: Got result from cmd '"+cmd+" to "+url[0]+": "+data.toString());
 		}
 		if (parseFunc( state, data.toString() )) {
 			client.setTimeout(0);
@@ -656,7 +656,7 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 	client.on('error', function(err) {
 		state.result = err;
 		if (debug_queue) {
-			console.log("QUEUE: Got error from cmd '"+cmd+"': "+state.result);
+			console.log("QUEUE: Got error from cmd '"+cmd+" to "+url[0]+": "+state.result);
 		}
 		success = false;
 		client.end();
@@ -665,7 +665,7 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 
 	client.on('close', function() {
 		if (debug_queue > 1) {
-			console.log("QUEUE: Connection closed for "+cmd+"', success="+success);
+			console.log("QUEUE: Connection closed for "+cmd+" to "+url[0]+", success="+success);
 		}
 		if (success) {
 			try {
@@ -677,7 +677,7 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 				cache_instr_cmd_rslt( queued_func, result );
 				successfunc( result );
 			} catch (err) {
-				console.log("ERROR: Caught while processing error results from \'"+cmd+"\': "+err);
+				console.log("ERROR: Caught while processing error results from \'"+cmd+"\' to "+url[0]+": "+err+" ("+state.failure_reported+")");
 				if (!state.failure_reported) {
 					state.failure_reported = true;
 					failurefunc(err);
