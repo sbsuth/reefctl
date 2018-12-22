@@ -643,10 +643,11 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 	});
 
 	client.on('data', function(data) {
+		var  complete = parseFunc( state, data.toString() );
 		if (debug_queue) {
-			console.log("QUEUE: Got result from cmd '"+cmd+" to "+url[0]+": "+data.toString());
+			console.log("QUEUE: Got result from cmd '"+cmd+" to "+url[0]+": "+data.toString()+": complete="+complete);
 		}
-		if (parseFunc( state, data.toString() )) {
+		if (complete) {
 			client.setTimeout(0);
 			client.end();
 		}
