@@ -1,11 +1,11 @@
 {>"master" /}
-{<title}: Monitors{/title}
+{<title}: {title}{/title}
 {<bodyContent}
 <input type=hidden id=system_name value={system_name} />
 <div class="container-fluid outer-container">
 	<div class="container title_row">
 		<table width=100%><tr>
-		<td width=90%><h3>Monitors</h3></td>
+		<td width=90%><h3>{title}</h3></td>
 		<td> <div class="checkbox checkbox-primary">
 				<input id="monitor_cb" type="checkbox" checked="">
 				<label style="padding: 0px;">Monitor</label>

@@ -1,3 +1,4 @@
+
 // Shared settings for all topup monitors.
 var topup_settings = {
 	init_data:					initTopupData,
@@ -139,6 +140,29 @@ function create_monitor_types()
 		},
 	};
 	Object.assign( monitors.water_change, dosing_settings );
+
+
+	//
+	// VODKA DOSING
+	//
+	monitors.vodka_dosing = { 
+		name: "vodka_dosing",
+		label: "Vodka Dosing",
+		stand_instr_type: "sump_level",
+		target_instr_type: "vodka",
+		num_phases: 1,
+		pump_num: 1,
+		phase: 0,
+		stand_ok_for_dosing: function(data,status) {
+			// Always OK for now.
+			return true;
+		},
+		dosing_ok: function(data,status) {
+			// Always OK for now.
+			return true;
+		},
+	};
+	Object.assign( monitors.vodka_dosing, dosing_settings );
 
 	//
 	// Scheduled shutdown
@@ -798,6 +822,9 @@ function checkIfPowerCycleNeeded( data, unit, success )
 					power_cycle:  unit.shutdown_switch
 				};
 				unit_check.insert( rec, {w: 0} );
+
+				// Send a text
+				data.utils.send_text_msg( "Unit restart", "Unit: "+unit.address+", time: "+new Date().toLocaleTimeString());
 
 				unit.num_good = 0;
 				unit.num_bad = 0;

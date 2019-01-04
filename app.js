@@ -16,7 +16,8 @@ var users = require('./routes/users');
 var test = require('./routes/test')
 var dashboard = require('./routes/dashboard')
 var login = require('./routes/login')
-var monitors_routes = require('./routes/monitors_routes');
+var monitors_ui = require('./routes/monitors_ui');
+var dosing_ui = require('./routes/dosing_ui');
 
 var app = express();
 
@@ -82,7 +83,8 @@ app.use('/users', users);
 app.use('/test', test);
 app.use('/', dashboard.router);
 app.use('/', login.router);
-app.use('/', monitors_routes.router);
+app.use('/', monitors_ui.router);
+app.use('/', dosing_ui.router);
 
 utils.setup_instr_routes( app );
 

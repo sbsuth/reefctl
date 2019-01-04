@@ -1,5 +1,6 @@
 var request = require('request');
 var net = require('net');
+var cp = require('child_process');
 
 // File-scoped variables.
 var dust = 0;
@@ -51,7 +52,8 @@ var instr_route_names = [
 	"power",
 	"stand",
 	"ro_res",
-	"dosing"
+	"dosing",
+	"vodka"
 ];
 var instr_routes = [];
 
@@ -457,8 +459,8 @@ function purge_timed_out_funcs() {
 
 	var now = new Date().getTime();
 
-	for ( var iqueues; iqueues < instr_cmd_queue.length; iqueues++ ) {
-		var queue = instr_cmd_queues[iqueues];
+	Object.keys(instr_cmd_queue).forEach( function(key) {
+		var queue = instr_cmd_queue[key];
 		for ( var iqueue=0; iqueue < queue.length; ) {
 			if ((now - queue[iqueue].time_queued) > timeout_ms) {
 				if (debug_queue) {
@@ -469,7 +471,7 @@ function purge_timed_out_funcs() {
 				iqueue++;
 			}
 		}
-	}
+	});
 }
 
 function start_queue_monitor() {
@@ -676,17 +678,20 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 					result = new Object;
 				}
 				cache_instr_cmd_rslt( queued_func, result );
-				successfunc( result );
+				if (!state.result_reported) {
+					state.result_reported = true;
+					successfunc( result );
+				}
 			} catch (err) {
-				console.log("ERROR: Caught while processing error results from \'"+cmd+"\' to "+url[0]+": "+err+" ("+state.failure_reported+")");
-				if (!state.failure_reported) {
-					state.failure_reported = true;
+				console.log("ERROR: Caught while processing error results from \'"+cmd+"\' to "+url[0]+": "+err+" ("+state.result_reported+")");
+				if (!state.result_reported) {
+					state.result_reported = true;
 					failurefunc(err);
 				}
 			}
 		} else {
-			if (!state.failure_reported) {
-				state.failure_reported = true;
+			if (!state.result_reported) {
+				state.result_reported = true;
 				failurefunc( state.result );
 			}
 		}
@@ -699,12 +704,12 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 		if (debug_queue) {
 			console.log("QUEUE: Timeout sending command '"+cmd+"'");
 		}
-		state.result = "Timeout sending command '"+cmd+"'";
+		state.result = "Timeout sending command '"+cmd+"': addr:"+url[0];
 		success = false;
 		if (state.connecting) {
 			state.connecting = false;
-			if (!state.failure_reported) {
-				state.failure_reported = true;
+			if (!state.result_reported) {
+				state.result_reported = true;
 				failurefunc( state.result );
 			}
 			instr_cmd_done( instr, queued_func );
@@ -715,6 +720,26 @@ function send_instr_cmd_proto( instr, cmd, queued_func, parseFunc, state, succes
 		
 	});
 
+	// Fallback timeout for rare cases where 'end' even doesn't occur.
+	// Ordinarily, we will either have completed, or timed out under net.Socket
+	// control, but if a 'close' never happens, the entire monitor stops running.
+	// This just catches that case and calls failureFunc.
+	setTimeout( function () {
+		if (!state.result_reported) {
+			state.result = "net.Socket never called close for command '"+cmd+"': addr:"+url[0];
+		    success = false;
+			if (debug_queue) {
+				console.log("QUEUE: "+state.result);
+			}
+			//send_text_msg( "Fallback timeout", state.result);
+			state.result_reported = true;
+			failurefunc(state.result);
+			instr_cmd_done( instr, queued_func );
+			client.setTimeout(0);
+			state.connected = false;
+			client.end();
+		}
+	}, 15000);
 }
 
 // send a command to an instrument directly as a TCP client.
@@ -725,7 +750,7 @@ function send_instr_cmd( instr, cmd, queued_func, successFunc, failureFunc )
 	// Clear any cached result for the entire instr before sending.
 	clear_cache_for_instr(instr);
 	
-	var state = {nread: 0, content_len: -1, result: "", connecting: false, connected: false};
+	var state = {nread: 0, content_len: -1, result: "", connecting: false, connected: false, result_reported: false};
 	send_instr_cmd_proto( instr, cmd, queued_func, parseFixedLengthReply, state, successFunc, failureFunc );
 }
 // send a command to an instrument directly as a TCP client.
@@ -733,7 +758,7 @@ function send_instr_cmd( instr, cmd, queued_func, successFunc, failureFunc )
 // Expect a series of lines terminated with \n, and \n\n at the end of the data.
 function send_instr_cmd_lines( instr, cmd, meta, successfunc, failurefunc ) 
 {
-	var state = {nread: 0, accum: "", result: {lines: [] }, connected: false};
+	var state = {nread: 0, accum: "", result: {lines: [] }, connected: false, result_reported: false};
 	send_instr_cmd_proto( instr, cmd, meta, parseReplyLines, state, successFunc, failureFunc );
 }
 
@@ -820,8 +845,43 @@ function get_monitor( system_name, monitor_name, stripped ) {
 	return mon;
 }
 
+// Utility that gets all monitors, including data from the db, and memory if its there.
+// Calls the given 'next' function with an err, and an array of monitors.
+function get_monitors( system_name, filter, next ) {
+
+	// Read all the monitors for the given system.
+	var monitors = this.db.get("monitors");
+	monitors.find( {system: system_name}, {}, function( err, monitor_objs ) {
+		if (monitor_objs && monitor_objs.length && !err) {
+
+			// Merge in any in-memory stuff that's not already in the db obj.
+			for ( var imon=0; imon < monitor_objs.length; imon++ ) {
+				var mon = monitor_objs[imon];
+				if ( (filter != undefined) && (filter[mon.name] == undefined)) {
+					monitor_objs.splice( imon, 1 );
+					imon--;
+					continue;
+				}
+				var memMon = get_monitor( system_name, mon.name, true );
+				if (memMon != undefined ) {
+					Object.keys(memMon).forEach( function(key) {
+						if ( mon[key] == undefined ) {
+							mon[key] = memMon[key]; // By ref.
+						}
+					});
+				}
+			}
+			next( undefined, monitor_objs );
+			
+		} else {
+			next( err, [] );
+		}
+	});
+}
+
+
 // Returns all monitors for the given system.
-function get_monitors( system_name, stripped ) {
+function get_all_monitors( system_name, stripped ) {
 	var rslt = [];
 	Object.keys(monitors).forEach( function(key) {
 		if (key.split('.')[0] == system_name) {
@@ -1037,6 +1097,70 @@ function reset_power_cycle( entity ) {
 	eps.state = "inactive";
 }
 
+function send_text_msg( title, content )
+{
+	var mail = cp.spawn('mail', ["-s", title, "4254177661@txt.att.net"]);
+	mail.stdin.write(content);
+	mail.stdin.end();
+}
+
+// Interprets a string given a type.
+// Retuns {val,err} where val is the typed value, and err is set if there was a problem.
+function decode_value( str, type ) {
+	var value = undefined;
+	var err = undefined;
+	switch (type) {
+		case "bool":
+			if ((str == "1") || (str == "true")) {
+				value = true;
+			} else if ((str == "0") || (str == "false")) {
+				value = false;
+			} else {
+				err = "Must specify true, false, 1, or 0";
+			}
+			break;
+		case "int":
+			value = Number.parseInt(str);
+			if (Number.isNaN(value)) {
+				err = "Must specify an integer.";
+			}
+			break;
+		case 'real':
+			value = Number.parseFloat(str);
+			if (Number.isNaN(value)) {
+				err = "Must specify real number";
+			}
+			break;
+		case 'str':
+			value = str;
+			break;
+		case 'time':
+			// A time from Date() in ms.
+			value = new Date(str).toLocaleString();
+			break;
+		case 'tod':
+			// Value is [hour,min], format is hour:min
+			var vals = str.split(":");
+			if (vals.length != 2)  {
+				err = "Must specify \'hour:min\'";
+			} else {
+				var hour = Number.parseInt(vals[0]);
+				var min = Number.parseInt(vals[1]);
+				if ( Number.isNaN(hour) || (hour < 0) || (hour > 23)) {
+					err = "Hours must be from 0-23.";
+				} else if ( Number.isNaN(hour) || (min < 0) || (min > 59)) {
+					err = "Minutes must be from 0-59."
+				} else {
+					value = [hour,min];
+				}
+			}
+			break;
+		default: 
+			err = "Unrecognized type \'"+type+"\'";
+			break;
+	}
+	return {value: value, err: err};
+}
 
 module.exports = {
 	init_dust_helpers: function( dust_in ) {
@@ -1066,11 +1190,14 @@ module.exports = {
 	register_monitor: register_monitor,
 	get_monitor: get_monitor,
 	get_monitors: get_monitors,
+	get_all_monitors: get_all_monitors,
 	compare_times: compare_times,
 	start_query_server: start_query_server,
 	query_cache: query_cache,
 	clear_cache_for_instr: clear_cache_for_instr,
 	cache_cmd_rslt: cache_cmd_rslt,
 	req_power_cycle: req_power_cycle, 
-	reset_power_cycle: reset_power_cycle
+	reset_power_cycle: reset_power_cycle,
+	send_text_msg: send_text_msg,
+	decode_value: decode_value
 }

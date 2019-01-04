@@ -4,64 +4,6 @@ var login = require('./login')
 
 var debug_monitors = 1;
 
-// Interprets a string given a type.
-// Retuns {val,err} where val is the typed value, and err is set if there was a problem.
-function decode_value( str, type ) {
-	var value = undefined;
-	var err = undefined;
-	switch (type) {
-		case "bool":
-			if ((str == "1") || (str == "true")) {
-				value = true;
-			} else if ((str == "0") || (str == "false")) {
-				value = false;
-			} else {
-				err = "Must specify true, false, 1, or 0";
-			}
-			break;
-		case "int":
-			value = Number.parseInt(str);
-			if (Number.isNaN(value)) {
-				err = "Must specify an integer.";
-			}
-			break;
-		case 'real':
-			value = Number.parseFloat(str);
-			if (Number.isNaN(value)) {
-				err = "Must specify real number";
-			}
-			break;
-		case 'str':
-			value = str;
-			break;
-		case 'time':
-			// A time from Date() in ms.
-			value = new Date(str).toLocaleString();
-			break;
-		case 'tod':
-			// Value is [hour,min], format is hour:min
-			var vals = str.split(":");
-			if (vals.length != 2)  {
-				err = "Must specify \'hour:min\'";
-			} else {
-				var hour = Number.parseInt(vals[0]);
-				var min = Number.parseInt(vals[1]);
-				if ( Number.isNaN(hour) || (hour < 0) || (hour > 23)) {
-					err = "Hours must be from 0-23.";
-				} else if ( Number.isNaN(hour) || (min < 0) || (min > 59)) {
-					err = "Minutes must be from 0-59."
-				} else {
-					value = [hour,min];
-				}
-			}
-			break;
-		default: 
-			err = "Unrecognized type \'"+type+"\'";
-			break;
-	}
-	return {value: value, err: err};
-}
-
 /*
  * POST for a shutdown request
  */
@@ -106,7 +48,7 @@ router.post('/set_monitor_value/:system/:monitor/:field/:value/:type', function(
 
 	try {
 
-	var parsed = decode_value(value,type);
+	var parsed = utils.decode_value(value,type);
 	if (parsed.err) {
 		utils.send_error( res, "ERROR: MONITORS: "+parsed.err);
 		return;
@@ -127,52 +69,6 @@ router.post('/set_monitor_value/:system/:monitor/:field/:value/:type', function(
 		console.log("ERROR: MONITORS: "+system+":"+monitor+": set value: "+field+"="+parsed.value+": "+err);
 	}
 
-});
-
-// Utility that gets all monitors, including data from the db, and memory if its there.
-// Calls the given 'next' function with an err, and an array of monitors.
-function get_monitors( utils, system_name, next ) {
-
-	// Read all the monitors for the given system.
-	var monitors = utils.db.get("monitors");
-	monitors.find( {system: system_name}, {}, function( err, monitor_objs ) {
-		if (monitor_objs && monitor_objs.length && !err) {
-
-			// Merge in any in-memory stuff that's not already in the db obj.
-			for ( var imon=0; imon < monitor_objs.length; imon++ ) {
-				var mon = monitor_objs[imon];
-				var memMon = utils.get_monitor( system_name, mon.name, true );
-				if (memMon != undefined ) {
-					Object.keys(memMon).forEach( function(key) {
-						if ( mon[key] == undefined ) {
-							mon[key] = memMon[key]; // By ref.
-						}
-					});
-				}
-			}
-			next( undefined, monitor_objs );
-			
-		} else {
-			next( err, [] );
-		}
-	});
-}
-
-
-//
-// GET monitors_status query.
-//
-router.get('/monitors_status/:system_name/:option?', function(req, res) {
-	var session = req.session;
-	var utils = req.utils;
-	var system_name = req.params.system_name;
-	if (debug_monitors) {
-		console.log("MONITORS: Incoming monitor status");
-	}
-	get_monitors( utils, system_name, function(err,mons) {
-		var rslt = {monitors: mons};
-		res.send(rslt);
-	});
 });
 
 /*
@@ -377,18 +273,31 @@ router.get('/monitors/:system_name/', login.validateUser, function(req, res) {
 				},
 			]
 		},
+		scheduled_shutdown: {
+			order: 6,
+			view_settings: [],
+			view_status: []
+		},
+		fuge_light: {
+			order: 7,
+			view_settings: [],
+			view_status: []
+		},
 	};
 
-	get_monitors( utils, system_name, function( err, monitor_objs ) {
+
+	utils.get_monitors( system_name, controls, function( err, monitor_objs ) {
 		if (err == undefined) {
 			var d = utils.get_master_template_data(req);
 			d.load_javascript.push( "/js/monitors.c.js" );
 			d.system_name = system_name;
 			for (var imon=0; imon < monitor_objs.length; imon++ ) {
 				var mon = monitor_objs[imon];
-				Object.assign( mon, controls[mon.name] );
+				var control = controls[mon.name];
+				Object.assign( mon, control );
 			}
 			monitor_objs.sort( function(a,b) { return a.order > b.order; } );
+			d.title = "Monitors";
 			d.monitors = monitor_objs;
 			d.controls = controls;
 			res.render("monitors", d );
@@ -397,6 +306,23 @@ router.get('/monitors/:system_name/', login.validateUser, function(req, res) {
 		}
 	} );
 });
+
+//
+// GET monitors_status query.
+//
+router.get('/monitors_status/:system_name/:option?', function(req, res) {
+	var session = req.session;
+	var utils = req.utils;
+	var system_name = req.params.system_name;
+	if (debug_monitors) {
+		console.log("MONITORS: Incoming monitor status");
+	}
+	utils.get_monitors( system_name, undefined, function(err,mons) {
+		var rslt = {monitors: mons};
+		res.send(rslt);
+	});
+});
+
 
 function objectIdWithTimestamp(timestamp) {
     // Convert string date to Date object (otherwise assume timestamp is a date)
