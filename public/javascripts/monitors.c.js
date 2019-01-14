@@ -22,6 +22,15 @@ function strip_last_token( id  ) {
 	return id;
 }
 
+// return string with leading 0 for <10.
+function dig2( val ) {
+	if ((val >= 0) && (val < 10)) {
+		return "0" + val;
+	} else {
+		return val;
+	}
+}
+
 // Returns a string given a typed value and a type.
 function encode_value( val, type ) {
 	var str = undefined;
@@ -35,6 +44,11 @@ function encode_value( val, type ) {
 		case 'real':
 			str = val.toFixed(1);
 			break;
+		case 'int10':
+			// Convert to float, and divide by 10.
+			val = val / 10.0;
+			str = val.toFixed(1);
+			break;
 		case 'str':
 			str = val;
 			break;
@@ -45,6 +59,16 @@ function encode_value( val, type ) {
 		case 'tod':
 			// Value is [hour,min], format is hour:min
 			str = val[0]+":"+val[1];
+			break;
+		case 'hms':  
+			// Value is sec, format is hour:min[:sec].
+			var hours = Math.floor(val/3600);
+			var min = Math.floor( (val % 3600) / 60 );
+			var sec = Math.floor( (val % 60) );
+			str =  dig2(hours)+":"+dig2(min);
+			if (sec > 0) {
+				str += ":" + dig2(sec);
+			}
 			break;
 		default: 
 			break;
@@ -79,6 +103,14 @@ function decode_value( str, type ) {
 				err = "Must specify real number";
 			}
 			break;
+		case 'int10':
+			value = Number.parseFloat(str);
+			if (Number.isNaN(value)) {
+				err = "Must specify real number";
+			} else {
+				Math.floor( value * 10 );
+			}
+			break;
 		case 'str':
 			value = str;
 			break;
@@ -96,6 +128,26 @@ function decode_value( str, type ) {
 					err = "Minutes must be from 0-59."
 				} else {
 					value = [hour,min];
+				}
+			}
+			break;
+		case 'hms':
+			// Value is 'sec', format is hour:min[:sec]
+			var vals = str.split(":");
+			if (vals.length < 2)  {
+				// Take value directly as seconds.
+				var sec = Number.parseInt(vals[0]);
+				value = sec;
+			} else {
+				var hour = Number.parseInt(vals[0]);
+				var min = Number.parseInt(vals[1]);
+				var sec = (vals.length > 2) ? Number.parseInt(vals[2]) : 0;
+				if ( Number.isNaN(hour) || (hour < 0) || (hour > 23)) {
+					err = "Hours must be from 0-23.";
+				} else if ( Number.isNaN(hour) || (min < 0) || (min > 59)) {
+					err = "Minutes must be from 0-59."
+				} else {
+					value = hour*3600 + min*60 + sec;
 				}
 			}
 			break;

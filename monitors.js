@@ -299,7 +299,10 @@ function initDosingData() {
 	if (!initData(data)) {
 		return;
 	}
-	data.dosed = [0,0];
+	data.dosed = [];
+	for ( i=0; i < data.num_phases; i++ ) {
+		data.dosed.push(0);
+	}
 }
 	
 // Initialize missing fields in server task data.
@@ -544,7 +547,6 @@ function dosingTask( data ) {
 		// then get the stand status, and if OK, do a dose.
 		utils.queue_and_send_instr_cmd( dosing, "stat", data.fuse_ms,
 			function(dosing_status) { // Success
-
 				data.res_lev = dosing_status.dist;
 
 				// If currently dosing, or in an interval,
@@ -552,14 +554,19 @@ function dosingTask( data ) {
 				if (     (dosing_status.num_active > 0)
 					  || (data.interval_remaining > 0)
 					  || !data.dosing_ok(data,dosing_status)) {
+					var doNow = false;
 					if (dosing_status.num_active == 0) {
 						if (data.interval_remaining < data.active_interval_sec) {
 							data.is_active = false; // Go to inactive if already past interval.
+							data.interval_remaining = 0;
+							if (data.inter_interval_sec) {
+								doNow = true;
+							}
 						} else {
 							data.interval_remaining -= data.active_interval_sec;
 						}
 					}
-					scheduleIter(data,false);
+					scheduleIter(data,false,doNow);
 				} else {
 
 					// Get stand status 
@@ -571,7 +578,12 @@ function dosingTask( data ) {
 									logDosing(data);
 								}
 								// Send command to dose.
-								var disp_cmd = "disp " + data.pump_num[data.phase] + " " + data.ml_per_iter;
+
+								var pn = data.pump_num;;
+								if (pn.length != undefined) {
+									pn = pn[data.phase];
+								}
+								var disp_cmd = "disp " + pn + " " + data.ml_per_iter;
 								utils.queue_and_send_instr_cmd( dosing, disp_cmd, 0,
 									function(dosing_status) { // Success
 										data.is_active = true;
@@ -1133,7 +1145,7 @@ function cancelCurShutdownTask( data, successFunc, errorFunc ) {
 //
 // Initializes data on first call, utilizing knowledge that its the first time to reset.
 //
-function scheduleIter( data, isRetry ) {
+function scheduleIter( data, isRetry, doNow ) {
 
 	var isFirst = Boolean(!data.initialized);
 
@@ -1161,11 +1173,13 @@ function scheduleIter( data, isRetry ) {
 			timedOut = true;
 		}
 	}
-	var interval = (data.enabled && (data.is_active || isFirst))
-		? data.active_interval_sec 
-		: (timedOut) 
-			? data.post_timeout_interval_sec
-			: data.watching_interval_sec;
+	var interval = doNow
+		? 0
+		: (data.enabled && (data.is_active || isFirst))
+			? data.active_interval_sec 
+			: (timedOut) 
+				? data.post_timeout_interval_sec
+				: data.watching_interval_sec;
 		
 	if (data.debug > 1) {
 		var msg = "MON: "+data.label;

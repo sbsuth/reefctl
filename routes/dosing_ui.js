@@ -71,15 +71,15 @@ router.get('/dosers/:system_name/', login.validateUser, function(req, res) {
 				},
 				{	label: "ml Per Day",
 					field: "ml_per_day",
-					type:  "int"
+					type:  "int10"
 				},
 				{	label: "ml Per Iter",
 					field: "ml_per_iter",
-					type:  "int"
+					type:  "int10"
 				},
 				{	label: "Iteration gap",
 					field: "inter_interval_sec",
-					type:  "int"
+					type:  "hms"
 				},
 				{	label: "Pump Num",
 					field: "pump_num",
@@ -97,7 +97,7 @@ router.get('/dosers/:system_name/', login.validateUser, function(req, res) {
 				},
 				{	label: "Dosed Today",
 					field: "dosed",
-					type:  "str"
+					type:  "int10"
 				},
 			]
 		},

@@ -66,7 +66,7 @@ router.post('/set_monitor_value/:system/:monitor/:field/:value/:type', function(
 				}
 			});
 	} catch (err) {
-		console.log("ERROR: MONITORS: "+system+":"+monitor+": set value: "+field+"="+parsed.value+": "+err);
+		console.log("ERROR: MONITORS: "+system+":"+monitor+": set value: "+field+"="+value+": "+err);
 	}
 
 });

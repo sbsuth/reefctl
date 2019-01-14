@@ -1131,6 +1131,16 @@ function decode_value( str, type ) {
 				err = "Must specify real number";
 			}
 			break;
+		case 'int10':
+			// Specified as real, mult by 10 and store as int. 
+			value = Number.parseFloat(str);
+			if (Number.isNaN(value)) {
+				err = "Must specify real number";
+			} else {
+				value = Math.floor(value * 10.0);
+			}
+			
+			break;
 		case 'str':
 			value = str;
 			break;
@@ -1152,6 +1162,26 @@ function decode_value( str, type ) {
 					err = "Minutes must be from 0-59."
 				} else {
 					value = [hour,min];
+				}
+			}
+			break;
+		case 'hms':
+			// Value is 'sec', format is hour:min[:sec]
+			var vals = str.split(":");
+			if (vals.length < 2)  {
+				// Take value directly as seconds.
+				var sec = Number.parseInt(vals[0]);
+				value = sec;
+			} else {
+				var hour = Number.parseInt(vals[0]);
+				var min = Number.parseInt(vals[1]);
+				var sec = (vals.length > 2) ? Number.parseInt(vals[2]) : 0;
+				if ( Number.isNaN(hour) || (hour < 0) || (hour > 23)) {
+					err = "Hours must be from 0-23.";
+				} else if ( Number.isNaN(hour) || (min < 0) || (min > 59)) {
+					err = "Minutes must be from 0-59."
+				} else {
+					value = hour*3600 + min*60 + sec;
 				}
 			}
 			break;
