@@ -165,6 +165,28 @@ function create_monitor_types()
 	Object.assign( monitors.vodka_dosing, dosing_settings );
 
 	//
+	// AMINO DOSING
+	//
+	monitors.amino_dosing = { 
+		name: "amino_dosing",
+		label: "Amino Dosing",
+		stand_instr_type: "sump_level",
+		target_instr_type: "vodka",
+		num_phases: 1,
+		pump_num: 1,
+		phase: 0,
+		stand_ok_for_dosing: function(data,status) {
+			// Always OK for now.
+			return true;
+		},
+		dosing_ok: function(data,status) {
+			// Always OK for now.
+			return true;
+		},
+	};
+	Object.assign( monitors.amino_dosing, dosing_settings );
+
+	//
 	// Scheduled shutdown
 	//
 	monitors.scheduled_shutdown = {
@@ -366,6 +388,7 @@ function initUnitCheckData() {
 	data.cur_bad = 0;
 	data.recent_good = [];
 	data.num_recent_good = 0;
+	data.max_recent_good = 128;
 	data.num_recent_bad = 0;
 	data.pct_recent_good = undefined;
 	data.last_bad_addr = undefined;
@@ -514,7 +537,7 @@ function dosingTask( data ) {
 		var d = new Date();
 		var hour = d.getHours(); // Midnight is 0.
 		var min = d.getMinutes();
-
+console.log("HEY: A");
 		if ((hour == 0) && (data.started || (data.dosed[0] > 0))) {
 			// Reset for the day.
 			for ( i=0; i < data.num_phases; i++ ) {
@@ -523,20 +546,24 @@ function dosingTask( data ) {
 			data.phase = 0;
 			data.started = false;
 			data.is_active = false;
+			data.interval_remaining = 0;
 			writeDosingData(data);
+console.log("HEY: B");
 			scheduleIter(data,false);
 			return;
 		}
 
 		if (!data.enabled || (data.daytime_only && !data.utils.is_daytime())) {
+console.log("HEY: C");
 			scheduleIter(data,false);
 			return;
 		}
 
-		if (   (!data.started && ((hour < data.start_time[0]) || (min < data.start_time[1])))
+		if (   (!data.started && ((hour < data.start_time[0]) || ((hour == data.start_time[0]) && (min < data.start_time[1]))))
 			|| (data.dosed[data.num_phases-1] >= data.ml_per_day) ) {
 			// Either not time to start, or already done.
 			data.is_active = false;
+console.log("HEY: D");
 			scheduleIter(data,false);
 			return;
 		}
@@ -566,6 +593,7 @@ function dosingTask( data ) {
 							data.interval_remaining -= data.active_interval_sec;
 						}
 					}
+console.log("HEY: E");
 					scheduleIter(data,false,doNow);
 				} else {
 
@@ -587,7 +615,6 @@ function dosingTask( data ) {
 								utils.queue_and_send_instr_cmd( dosing, disp_cmd, 0,
 									function(dosing_status) { // Success
 										data.is_active = true;
-										data.interval_remaining = data.inter_interval_sec;
 										data.dosed[data.phase] += data.ml_per_iter;
 										data.phase++;
 										if (data.phase >= data.num_phases) {
@@ -596,14 +623,20 @@ function dosingTask( data ) {
 										if (data.dosed[data.num_phases-1] >= data.ml_per_day) {
 											// Done.
 											data.is_active = false;
+											data.interval_remaining = 0;
 											logDosing(data);
-										} else if (data.debug) {
-											console.log("DOSING: Finished "+data.dosed+" of "+data.ml_per_day+"ml");
+										} else {
+											data.interval_remaining = data.inter_interval_sec;
+											if (data.debug) {
+												console.log("DOSING: Finished "+data.dosed+" of "+data.ml_per_day+"ml");
+											}
 										}
 										writeDosingData(data);
+console.log("HEY: F");
 										scheduleIter(data);
 									},
 									function(error) { // Failure
+console.log("HEY: G");
 										scheduleIter(data,true);
 										if (!data.is_active) {
 											logDosing( data, error );
@@ -613,6 +646,7 @@ function dosingTask( data ) {
 
 
 							} else {
+console.log("HEY: H");
 								scheduleIter(data,false);
 								if (data.is_active) {
 									data.is_active = false;
