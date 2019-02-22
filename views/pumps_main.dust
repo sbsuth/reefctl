@@ -2,6 +2,7 @@
 {<title}: Pumps{/title}
 {<bodyContent}
 <input type=hidden id=instr_name value={instr_name} />
+<input type=hidden id=num_pumps value={num_pumps} />
 <div class="container-fluid outer-container">
 	<div class="container title_row">
 		<table width=100%><tr>

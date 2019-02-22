@@ -183,12 +183,24 @@ router.get('/powerheads_main/:instr_name', login.validateUser, function(req, res
 				   ];
 	d.indexes = [{index: 0, 
 	              pump: 2,
-				  settings: settings
-				  },
+				  settings: settings,
+				  label: "Left Powerhead",
+				  tag: "Left"
+				 },
 				 {index: 1, 
 				  pump: 3,
-				  settings: settings
-				  }];
+				  settings: settings,
+				  label: "Right Powerhead",
+				  tag: "Right"
+				 },
+				 {index: 2, 
+				  label: "Gyre",
+	              pump: 0,
+				  settings: settings,
+				  label: "Gyre",
+				  tag: "Gyre"
+				 }];
+	d.num_pumps = d.indexes.length;
 	res.render("powerheads_main", d );
 });
 
@@ -211,16 +223,14 @@ router.get('/pumps_main/:instr_name', login.validateUser, function(req, res) {
 					{i: 1, id: "top_speed",   kind: "edit", func: "set_speed", label: "Normal Speed (%)"},
 					{i: 2, id: "slow_speed",  kind: "edit", func: "set_speed", label: "Slow Speed (%)"},
 				   ];
-	d.indexes = [{index: 0, 
-				  label: "Return",
-	              pump: 0,
-				  settings: settings
-				  },
-				 {index: 1, 
+	d.indexes = [
+				 {index: 0, 
 				  label: "Skimmer",
 				  pump: 1,
 				  settings: settings
 				  }];
+	d.num_pumps = d.indexes.length;
+
 	res.render("pumps_main", d );
 });
 

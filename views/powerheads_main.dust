@@ -2,6 +2,7 @@
 {<title}: Powerheads{/title}
 {<bodyContent}
 <input type=hidden id=instr_name value={instr_name} />
+<input type=hidden id=num_pumps value={num_pumps} />
 <div class="container-fluid outer-container">
 	<div class="container title_row">
 		<table width=100%><tr>
@@ -28,7 +29,7 @@
 							{#indexes}
 							  <input type=hidden id=pump_num_{index} value={pump} />
 							  <tr class=x_row>
-								<td class="w_5 row_label" ><p>#{@math key=index method="add" operand="1"/}:</p></td>
+								<td class="w_5 row_label" ><p>{tag}:</p></td>
 								<td class="w_5 row_label" ><p id=curSpeed_{index}>XXX%</p></td>
 								<td class="w_90">
 								<div class="progress">
@@ -61,7 +62,7 @@
 			<div class="col-xs-12 col-md-6">
 				<div class="x_panel">
 				 <div class="x_title">
-					<h2>Powerhead #{@math key=index method="add" operand="1"/} Settings</h2>
+					<h2>{label} Settings</h2>
 				 </div>
 				 <div class="x_content">
 					<div class="row">

@@ -80,18 +80,20 @@ powerheads.handleStatus = function ( data ) {
 	}
 
 	if (data.error === undefined) {
-		var pdata = [ data[page.i_pstat[0]], data[page.i_pstat[1]]];
-		var settings_strs = [ page.settingsStr(pdata[0]), page.settingsStr(pdata[1]) ];
+		var i;
+		var pdata = [];
 
-		for (var i=0; i < 2; i++ ) {
+		for (i=0; i < page.num_pumps; i++ ) {
+			pdata.push( data[page.i_pstat[i]]);
 			page.updateSpeed( i, pdata[i].cur_speed);
 			page.updateTempShutdown(i, pdata[i].temp_shutdown);
 
 			// Update settings if they haven't changed since last time.
 			// Not overwriting keeps us from blasting things being entered by users.
-			if (settings_strs[i] != page.last_settings[i]) {
+			var settings_str = page.settingsStr(pdata[i]);
+			if (settings_str != page.last_settings[i]) {
 				page.updateSettings( i, pdata[i]);
-				page.last_settings[i] = settings_strs[i];
+				page.last_settings[i] = settings_str;
 			}
 			page.enable_controls(i);
 		}
@@ -112,7 +114,7 @@ powerheads.handleStatus = function ( data ) {
 // Update function for dashboard widget.
 powerheads.widgetUpdate = function(instr,data) {
 	var page = powerheads;
-	for ( var i=0; i < 2; i++ ) {
+	for ( var i=0; i < page.num_pumps; i++ ) {
 		var h_mode = $('#ph_mode_'+i);
 		var h_speed = $('#ph_speed_'+i);
 		var d = data[page.i_pstat[i]];
@@ -356,6 +358,7 @@ $(document).ready(function() {
 	page.i_pstat = []; // Indexes in pump status array for each powerhead.
 
 	var instr_elem = $( '#instr_name' )[0];
+	page.num_pumps = $( '#num_pumps' )[0].value;
 	if (instr_elem == undefined) {
 		// Loading the file as utilities.  Don't initialize"
 		return
@@ -367,7 +370,7 @@ $(document).ready(function() {
 	// 2D array of controls for easy access.
 	page.controls = new Array();
 	page.changed_controls = new Array();
-	for (var i=0; i < 2; i++ ) {
+	for (var i=0; i < page.num_pumps; i++ ) {
 		var ctrls = new Array();
 		page.controls.push(ctrls);
 		page.changed_controls.push( new Array() );
