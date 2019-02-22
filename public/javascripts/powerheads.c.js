@@ -1,5 +1,5 @@
 
-var powerheads = new PageUtils( 1, "POWERHEADS", 2000, 20000, 0 );
+var powerheads = new PageUtils( 1, "POWERHEADS", 2000, 20000 );
 var pumps = powerheads;
 
 
