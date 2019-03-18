@@ -1,6 +1,7 @@
 var request = require('request');
 var net = require('net');
 var cp = require('child_process');
+var mongo = require("mongodb");
 
 // File-scoped variables.
 var dust = 0;
@@ -815,6 +816,15 @@ function compare_times( a, b ) {
 	}
 }
 
+// Given 2 [hour,sec] arrays, adds incr to t and returns the result.
+function add_time( t, incr )
+{
+	var sum = [t[0] + incr[0],t[1] + incr[1]];
+	sum[0] += Math.floor(sum[1]/60);
+	sum[1] = Math.floor(sum[1]%60);
+	return sum;
+}
+
 // Stores the given monitor, indexed by system naem and name.
 function register_monitor( monitor ) {
 	var key = monitor.system_name + "." + monitor.name;
@@ -1192,6 +1202,13 @@ function decode_value( str, type ) {
 	return {value: value, err: err};
 }
 
+// returns a mongo ObjectID for a Date.
+function mongo_id_for_time( t ) {
+	var hexSeconds = Math.floor(t/1000).toString(16);
+	var objt = new mongo.ObjectID(hexSeconds + "0000000000000000");
+	return objt;
+}
+
 module.exports = {
 	init_dust_helpers: function( dust_in ) {
 		dust = dust_in;
@@ -1222,6 +1239,7 @@ module.exports = {
 	get_monitors: get_monitors,
 	get_all_monitors: get_all_monitors,
 	compare_times: compare_times,
+	add_time: add_time,
 	start_query_server: start_query_server,
 	query_cache: query_cache,
 	clear_cache_for_instr: clear_cache_for_instr,
@@ -1229,5 +1247,6 @@ module.exports = {
 	req_power_cycle: req_power_cycle, 
 	reset_power_cycle: reset_power_cycle,
 	send_text_msg: send_text_msg,
-	decode_value: decode_value
+	decode_value: decode_value,
+	mongo_id_for_time: mongo_id_for_time
 }

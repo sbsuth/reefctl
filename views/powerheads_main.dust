@@ -101,6 +101,36 @@
 				 </div>
 			</div><!--col-->
 			{/indexes}
+			<!--Set selection-->
+			<div class="col-xs-12 col-md-6">
+				<div class="x_panel">
+				 <div class="x_title">
+					<h2>Settings Groups</h2>
+				 </div>
+				 <div class="x_content">
+					<div class="row">
+						<div class="col-xs-12">
+							<table class="x_table" width=100%>
+								<tr class=x_row>
+									<input type=hidden id=cur_set_row value=cur_set />
+									<td class="w_30" id=cur_set_label>Current Settings Group</td>
+									<td>
+										<div class="input-group input-group-sm" id=cur_set_item>
+											<select id=cur_set class="form-control x_combo">
+											<option value=-1>(Pending)</option>
+											<option value=0>Daytime</option>
+											<option value=1>Nighttime</option>
+											</select>
+											<span class="input-group-btn"> <button class="btn btn-default" type="button" id="set_cur_set" onclick='powerheads.set_cur_set(event)'><i class="glyphicon glyphicon-upload"/></button> </span>
+										</div><!-- /input-group -->
+									</td>
+								</tr>
+							</table>
+						</div>
+					</div>
+				 </div>
+				 </div>
+			</div><!--col-->
 		</div><!--row-->
 	</div><!--container-->
 	<div class="container" >

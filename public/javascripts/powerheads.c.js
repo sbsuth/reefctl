@@ -58,6 +58,10 @@ powerheads.updateSettings = function( ph, values ) {
 	if (controls[4]) {controls[4].input.val( values.hold_range ); }
 	if (controls[5]) {controls[5].input.val( values.ramp_sec ); }
 	if (controls[6]) {controls[6].input.val( values.ramp_range ); }
+
+	// We take the curSet value from the last control we've read.
+	// They are ordinarily all the same.
+	$('#cur_set').val( values.iset );
 }
 
 // Return a clone of the data without the non-settings fields.
@@ -126,6 +130,11 @@ powerheads.widgetUpdate = function(instr,data) {
 
 powerheads.validateInt = function( input, descr, min, max ) {
 	var page = this;
+
+	// Always OK if the input is disabled.
+	if (input.prop("disabled")) {
+		return true;
+	}
 	var value = input.val();
 	if (parseInt(value) != value) {
 		page.showError( 0, "Must enter an integer for "+descr+"! ("+value+")");
@@ -305,6 +314,28 @@ powerheads.onControlChanged = function( icontrol, index ) {
 	page.enable_controls(index);
 }
 
+// Send down the new cur_set value to all pumps.
+powerheads.set_cur_set = function( event ) {
+	var page = this;
+
+	var cmd = "cset";
+	var cur_set = $('#cur_set').val();
+	if (cur_set == undefined ) {
+		cur_set = 0;
+	}
+	var args = cur_set.toString();
+
+	// Always 3 args that are pump indexes.
+	for ( var i=0; i < 3; i++ ) {
+		args += "/";
+		if (i < page.num_pumps) {
+			args += page.i_pstat[i].toString();
+		} else {
+			args += "-1";
+		}
+	}
+	page.sendCmd(event,cmd, args);
+}
 
 // Sends a command to the stand.
 powerheads.sendCmd = function (event,cmd,arg,successFunc) {
@@ -365,7 +396,6 @@ $(document).ready(function() {
 	}
 	page.instr_name = instr_elem.value;
 
-	
 
 	// 2D array of controls for easy access.
 	page.controls = new Array();

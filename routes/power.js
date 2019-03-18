@@ -91,7 +91,7 @@ router.get('/power_main/:instr_name', login.validateUser, function(req, res) {
 	d.switch_rows = [
 					{cols: [{i:0, l:"Power Head #1"},	{i:1, l:"Power Head #2"}]},
 					{cols: [{i:2, l:"Return"},			{i:3, l:"Skimmer"}]},
-					{cols: [{i:4, l:"Wall Fan"},		{i:5, l:"(unused)"}]},
+					{cols: [{i:4, l:"Wall Fan"},		{i:5, l:"Gyre"}]},
 					{cols: [{i:6, l:"(unused)"},		{i:7, l:"Fuge Light"}]}
 				 ];
 	res.render("power_main", d );

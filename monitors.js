@@ -19,7 +19,7 @@ var topup_settings = {
 var dosing_settings = {
 	init_data:					initDosingData,
 	exec_task:					dosingTask,
-	active_interval_sec:		2 * 60, // Glitch in pump with every check so wait longer than expected time.
+	active_interval_sec:		(2 * 60) + 10, // Glitch in pump with every check so wait longer than expected time.
 	watching_interval_sec:		5 * 60,
 	post_timeout_interval_sec:	1 * 60,
 	fuse_ms:					5 * 1000,
@@ -187,6 +187,28 @@ function create_monitor_types()
 	Object.assign( monitors.amino_dosing, dosing_settings );
 
 	//
+	// TSP DOSING
+	//
+	monitors.tsp_dosing = { 
+		name: "tsp_dosing",
+		label: "TSP Dosing",
+		stand_instr_type: "sump_level",
+		target_instr_type: "vodka",
+		num_phases: 1,
+		pump_num: 0,
+		phase: 0,
+		stand_ok_for_dosing: function(data,status) {
+			// Always OK for now.
+			return true;
+		},
+		dosing_ok: function(data,status) {
+			// Always OK for now.
+			return true;
+		},
+	};
+	Object.assign( monitors.tsp_dosing, dosing_settings );
+
+	//
 	// Scheduled shutdown
 	//
 	monitors.scheduled_shutdown = {
@@ -209,11 +231,25 @@ function create_monitor_types()
 		name: "fuge_light",
 		label: "Fuge Light",
 		target_instr_type: "power",
-		start_task: fugeLightOn,
-		end_task: fugeLightOff,
+		start_task: relayOn,
+		end_task: relayOff,
 	};
 
 	Object.assign( monitors.fuge_light, server_task_settings );
+
+
+	//
+	// Gyre power cycle
+	//
+	monitors.gyre_cycle = {
+		name: "gyre_cycle",
+		label: "Power Cyc;e Gyre",
+		target_instr_type: "power",
+		start_task: relayOff,
+		end_task: relayOn,
+	};
+
+	Object.assign( monitors.gyre_cycle, server_task_settings );
 
 	//
 	// Unit check
@@ -537,7 +573,6 @@ function dosingTask( data ) {
 		var d = new Date();
 		var hour = d.getHours(); // Midnight is 0.
 		var min = d.getMinutes();
-console.log("HEY: A");
 		if ((hour == 0) && (data.started || (data.dosed[0] > 0))) {
 			// Reset for the day.
 			for ( i=0; i < data.num_phases; i++ ) {
@@ -548,13 +583,11 @@ console.log("HEY: A");
 			data.is_active = false;
 			data.interval_remaining = 0;
 			writeDosingData(data);
-console.log("HEY: B");
 			scheduleIter(data,false);
 			return;
 		}
 
 		if (!data.enabled || (data.daytime_only && !data.utils.is_daytime())) {
-console.log("HEY: C");
 			scheduleIter(data,false);
 			return;
 		}
@@ -563,7 +596,6 @@ console.log("HEY: C");
 			|| (data.dosed[data.num_phases-1] >= data.ml_per_day) ) {
 			// Either not time to start, or already done.
 			data.is_active = false;
-console.log("HEY: D");
 			scheduleIter(data,false);
 			return;
 		}
@@ -593,7 +625,6 @@ console.log("HEY: D");
 							data.interval_remaining -= data.active_interval_sec;
 						}
 					}
-console.log("HEY: E");
 					scheduleIter(data,false,doNow);
 				} else {
 
@@ -632,11 +663,9 @@ console.log("HEY: E");
 											}
 										}
 										writeDosingData(data);
-console.log("HEY: F");
 										scheduleIter(data);
 									},
 									function(error) { // Failure
-console.log("HEY: G");
 										scheduleIter(data,true);
 										if (!data.is_active) {
 											logDosing( data, error );
@@ -646,7 +675,6 @@ console.log("HEY: G");
 
 
 							} else {
-console.log("HEY: H");
 								scheduleIter(data,false);
 								if (data.is_active) {
 									data.is_active = false;
@@ -677,6 +705,77 @@ function writeServerTaskData( data ) {
 					 } );
 }
 
+// If there is a repeat field in a time, and if it differs from repeat_used, 
+// Remove all times after the current time, then add dups of the repeated field
+// at the specified interval.
+function initRepeatTimes(data) {
+
+	var d = new Date();
+	var hour = d.getHours(); // Midnight is 0.
+	var min = d.getMinutes();
+	var irepeat = undefined;
+	var irepeat_done = undefined;
+	var now = [hour,min];
+	// Find the first time with a repeat, and the last time after whose start time has already occurreed.
+	for ( var itime=0; itime < data.times.length; itime++ ) {
+		var time = data.times[itime];
+		if (irepeat != undefined) {
+			if ( (data.utils.compare_times( now, time.start ) > 0) && time.done_today) {
+				irepeat_done = itime;
+			}
+		} else if (time.repeat && ((time.repeat[0] > 0.0) || (time.repeat[1] > 0.0))) {
+			irepeat = itime;
+		} else if (time.repeat_used != undefined) {
+			// Was a repeat where repeat was removed, so clear from here on.
+			while (data.times.length > (itime+1)) {
+				data.times.pop();
+			}
+			time.repeat_used = undefined;
+			return true;
+		}
+	}
+	if (irepeat == undefined) {
+		return false;
+	}
+
+	// Nothing to do if there is no repeat, or if repeat_used == repeat)
+	// Create a signature from start, duration, and repeat.
+	// If that hasn't changed, we re-init.
+	var to_repeat = data.times[irepeat];
+	var signature = JSON.stringify( to_repeat.start.concat( to_repeat.duration ).concat( to_repeat.repeat ) );
+	if (to_repeat.repeat_used == signature) {
+		return false;
+	}
+	to_repeat.repeat_used = signature;
+
+	// Remove any repeats that haven't started yet.
+	var i_keep = (irepeat_done ? irepeat_done : irepeat);
+	while (data.times.length > (i_keep+1)) {
+		data.times.pop();
+	}
+	// Increment must be at least as long as the duration.
+	var incr = to_repeat.repeat;
+	var dur = to_repeat.duration;
+	if ( data.utils.compare_times( incr, dur ) <= 0 ) {
+		incr = data.utils.add_time( dur, [0,1] );
+	}
+	// Add repeats until the end of the day.
+	var cur = data.times[i_keep].start;
+	while (1) {
+		cur = data.utils.add_time( cur, incr );
+		if (cur[0] >= 24.0) {
+			break;
+		}
+		var rep_time = {
+			start : cur.slice(),
+			duration : dur.slice(),
+			done_today: false,
+			option: to_repeat.option
+		}
+		data.times.push( rep_time );
+	}
+	return true;
+}
 
 // Execute tasks scheduled at specific times.
 function serverTask( data ) {
@@ -715,15 +814,24 @@ function serverTask( data ) {
 			for ( var itime=0; itime < data.times.length; itime++ ) {
 				var time = data.times[itime];
 				time.done_today = false;
+				time.repeat_used = undefined; // Cause re-calc of repeats.
 			}
+
+
 			// If there's a task active, mark it as having gone past midnight.
 			if (data.active_task && data.is_active) {
 				data.active_task.over_midnight = true;
+			} else {
+				initRepeatTimes(data);
 			}
+
 			writeServerTaskData(data);
 			scheduleIter(data,false);
 			return;
 		}
+
+		if (initRepeatTimes(data))
+			writeServerTaskData(data);
 
 		// If disabled, do nothing, but check if enabled in a while.
 		if (!data.enabled) {
@@ -740,9 +848,7 @@ function serverTask( data ) {
 			if (!time) {continue;}
 			if (time.done_today) {continue;}
 			var start = time.start;
-			var end = [time.start[0] + time.duration[0],time.start[1] + time.duration[1]];
-			end[0] += Math.floor(end[1]/60);
-			end[1] = Math.floor(end[1]%60);
+			var end = utils.add_time( time.start, time.duration );
 			var option = time.option;
 			var duration = (time.duration[0] * 60) | time.duration[1];
 
@@ -759,10 +865,12 @@ function serverTask( data ) {
 							data.active_task = undefined;
 							data.is_active = false;
 							time.done_today = true;
+							writeServerTaskData(data);
 							scheduleIter(data,false);
 						}, 
 						function (error) {
 							// Error ending.
+							writeServerTaskData(data);
 							scheduleIter(data,true);
 							if (!data.is_active) {
 								time.done_today = true;
@@ -1094,9 +1202,9 @@ function endScheduledShutdown( data, option, successFunc, errorFunc ) {
 }
 
 
-// Function to turn on fuge light
+// Function to turn a relay on
 // Options: switch num.
-function fugeLightOn( data, option, duration_min, successFunc, errorFunc ) {
+function relayOn( data, option, duration_min, successFunc, errorFunc ) {
 	var utils = data.utils;
 	var instrs = data.instrs;
 	var power = utils.get_instr_by_type( instrs, data.target_instr_type );
@@ -1110,8 +1218,9 @@ function fugeLightOn( data, option, duration_min, successFunc, errorFunc ) {
 		errorFunc );
 }
 
-// Function to restore the non-shutdown pump speeds.
-function fugeLightOff( data, option, successFunc, errorFunc ) {
+// Function to turn a relay off
+// Option: swich num.
+function relayOff( data, option, successFunc, errorFunc ) {
 	var utils = data.utils;
 	var instrs = data.instrs;
 	var power = utils.get_instr_by_type( instrs, data.target_instr_type );

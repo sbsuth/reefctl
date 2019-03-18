@@ -2,16 +2,65 @@
 var monitors = new PageUtils( 1, "MONITORS", 60000, 60000 );
 	
 // Format is monitor-<field>-<monitor_name>-<type>
-// Name may have u
+// The <field> can be a simple field name, or it can include 
+// a subscript, and a sub-field.  For example:
+//  mymon-myarray:1.x-int
+// to encode:
+//  mymon[myarray][1].x
+// The subscript is stored in 'subscript', and the subfield is sotred in 'subfield'.
 function decode_id(id) {
 	var segs = id.split('-');
-	return {field: segs[1],
+	var field = segs[1];
+
+	var field_subfield = field.split('.');
+	var subfield = undefined;
+	if (field_subfield.length == 2) {
+		field = field_subfield[0];
+		subfield = field_subfield[1];
+	}
+
+	var field_indexed = field.split(':');
+	var index = undefined;
+	if (field_indexed.length == 2) {
+		field = field_indexed[0];
+		index = field_indexed[1];
+	}
+	return {field: field,
 			monitor: segs[2],
-			type: segs[3] };
+			type: segs[3],
+			subscript: index,
+			subfield: subfield
+		   };
 			
 }
-function encode_id(monitor,field,type) {
-	return "monitor-"+field+"-"+monitor+"-"+type;
+
+
+function encode_field( id_info ) {
+	var field = id_info.field;
+	if (id_info.subscript != undefined) {
+		field += ":" + id_info.subscript;
+	}
+	if (id_info.subfield != undefined) {
+		field += "." + id_info.subfield;
+	}
+	return field;
+}
+
+function encode_id(monitor,id_info) {
+	return "monitor-"+encode_field(id_info)+"-"+monitor+"-"+id_info.type;
+}
+
+// Gets the value from the monitor for the field, subscript, and subfield in the given id_info.
+function get_monitor_field_value( mon,id_info)
+{
+	var val = mon[id_info.field];
+	if (id_info.subscript != undefined) {
+		val = val[id_info.subscript];
+	}
+	if (id_info.subfield != undefined) {
+		val = val[id_info.subfield];
+	}
+	return val;
 }
 
 // Strip the last token off the given dash-separated ID.
@@ -207,17 +256,19 @@ monitors.handleStatus = function ( data ) {
 		var id = field.id;
 		var id_info = decode_id(id); // {field,monitor,type}
 		var mon = mons_by_name[id_info.monitor];
-		if ( (mon != undefined) && (mon[id_info.field] != undefined)) {
-			var qfield = $('#'+encode_id(mon.name,id_info.field,id_info.type));
+		var value = get_monitor_field_value(mon,id_info);
+		if ( (mon != undefined) && (value != undefined)) {
+			var qfield = $("[id=\'"+encode_id(mon.name,id_info)+"\']"); // Need this form since can have embedded ':'
 			if (field.type == "checkbox") {
-				qfield.prop('checked', mon[id_info.field]);
+				qfield.prop('checked', value);
 			} else {
-				var str = encode_value( mon[id_info.field], id_info.type );
+				var str = encode_value( value, id_info.type );
 				if (str != undefined) {
 					if (field.type == "text") {
 						qfield.val( str );
 					} else if (field.tagName == "P") {
 						qfield.text( str );
+					} else {
 					}
 				}
 			}
@@ -268,8 +319,8 @@ monitors.setValue = function(event) {
 	}
 	var val_id = strip_last_token(elem.id);
 	var id_info = decode_id(val_id);
-	var value = $('#'+val_id).val();
-	page.sendSetting(  event, id_info.monitor, id_info.field, value, id_info.type );
+	var value = $("[id=\'"+val_id+"\']").val();
+	page.sendSetting(  event, id_info.monitor, encode_field(id_info), value, id_info.type );
 }
 
 // Event handler for switch press.

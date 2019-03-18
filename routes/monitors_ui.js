@@ -54,6 +54,10 @@ router.post('/set_monitor_value/:system/:monitor/:field/:value/:type', function(
 		return;
 	}
 
+	// Field names can contain :<i> for subscripts.
+	// For $set, this becomes .<i>
+	field = field.replace(":",".");
+
 	var field_and_val = {}
 	field_and_val[field] = parsed.value;
 
@@ -275,13 +279,72 @@ router.get('/monitors/:system_name/', login.validateUser, function(req, res) {
 		},
 		scheduled_shutdown: {
 			order: 6,
-			view_settings: [],
-			view_status: []
+			view_settings: [
+				{	label: "Start",
+					field: "times:0.start",
+					type: "tod"
+				},
+				{	label: "Duration",
+					field: "times:0.duration",
+					type: "tod"
+				}
+			],
+			view_status: [
+				{	label: "Done Today",
+					field: "times:0.done_today",
+					type: "bool"
+				}
+			]
 		},
 		fuge_light: {
 			order: 7,
-			view_settings: [],
-			view_status: []
+			view_settings: [
+				{	label: "Start",
+					field: "times:0.start",
+					type: "tod"
+				},
+				{	label: "Duration",
+					field: "times:0.duration",
+					type: "tod"
+				},
+				{	label: "Switch#",
+					field: "times:0.option",
+					type: "int"
+				}
+			],
+			view_status: [
+				{	label: "Done Today",
+					field: "times:0.done_today",
+					type: "bool"
+				}
+			]
+		},
+		gyre_cycle: {
+			order: 8,
+			view_settings: [
+				{	label: "Start",
+					field: "times:0.start",
+					type: "tod"
+				},
+				{	label: "Duration",
+					field: "times:0.duration",
+					type: "tod"
+				},
+				{	label: "Repeat",
+					field: "times:0.repeat",
+					type: "tod"
+				},
+				{	label: "Switch#",
+					field: "times:0.option",
+					type: "int"
+				}
+			],
+			view_status: [
+				{	label: "Done Today",
+					field: "times:0.done_today",
+					type: "bool"
+				}
+			]
 		},
 	};
 

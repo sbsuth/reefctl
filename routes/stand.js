@@ -201,6 +201,7 @@ router.get('/powerheads_main/:instr_name', login.validateUser, function(req, res
 				  tag: "Gyre"
 				 }];
 	d.num_pumps = d.indexes.length;
+
 	res.render("powerheads_main", d );
 });
 
