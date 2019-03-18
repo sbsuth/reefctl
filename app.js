@@ -58,7 +58,7 @@ app.use('/js', express.static(__dirname + '/node_modules/chart.js/dist')); // ch
 // Filter to define session.
 app.use(session({
 	secret: 'steves reef',
-    resave: false,
+    resave: true,
 	saveUninitialized: true,
 	store: new MongoStore({url:"mongodb://localhost/reefctl" })
 }))
