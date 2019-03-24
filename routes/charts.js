@@ -16,73 +16,59 @@ router.get('/chart/:system_name/', login.validateUser, function(req, res) {
 		console.log("CHARTS: get : "+system_name);
 	}
 
-	utils.send_error( res, "No char page yet!);
+	utils.send_error( res, "No char page yet!");
 });
 
 //
 // GET chart_data query.
 //
-router.get('/chart_data/:system_name/:option?', function(req, res) {
+router.get('/chart_data/:system_name/:start/:end', function(req, res) {
 	var session = req.session;
 	var utils = req.utils;
 	var system_name = req.params.system_name;
+	var start = req.params.start;
+	var end = req.params.end;
 	if (debug_chart) {
 		console.log("CHARTS: Incoming chart_data");
 	}
+try {
+	var startDate = new Date( parseInt(start) );
+	var endDate = new Date( parseInt(end) );
 
-	var log_data = this.db.get("log_data");
-	log_data.find( {system: system_name
+//startDate = new Date( 2019, 2, 22, 22, 0, 0, 0 );
+//endDate = new Date( 2019, 2, 22, 23, 59, 59, 0 );
+	var startId = utils.mongo_id_for_time(startDate);
+	var endId = utils.mongo_id_for_time(endDate);
+
+	var log_data = utils.db.get("log_data");
+	log_data.find( {system: system_name,
+					_id: {$gt: startId, $lt: endId}
 				    }, {}, function( err, data_objs ) {
 		if (data_objs && data_objs.length && !err) {
 			var rslt = {data: data_objs};
+console.log("HEY: Got "+data_objs.length+" data");
 			res.send( rslt );
 		} else {
+console.log("HEY: Got no data");
 			var rslt = {data: data_objs};
 			res.send( rslt );
 		}
 	});
+} catch (err) {
+	console.log("CATCH: chart_data: "+err);
+	res.send( {error: err} );
+}
 });
 
-
-function objectIdWithTimestamp(timestamp) {
-    // Convert string date to Date object (otherwise assume timestamp is a date)
-    if (typeof(timestamp) == 'string') {
-        timestamp = new Date(timestamp);
-    }
-
-    // Convert date object to hex seconds since Unix epoch
-    var hexSeconds = Math.floor(timestamp/1000).toString(16);
-
-    // Create an ObjectId with that hex timestamp
-    var constructedObjectId = ObjectId(hexSeconds + "0000000000000000");
-
-    return constructedObjectId
-}
 
 function getData(utils) {
 
 	var startDate = new Date("August 16, 2018 20:30:00");
 	var endDate = new Date(startDate.getTime()+(30*1000*60));
-	var start = objectIdWithTimestamp(startDate);
-	var end = objectIdWithTimestamp(endDate);
+	var start = utils.mongo_id_for_time(startDate);
+	var end = utils.mongo_id_for_time(endDate);
 	utils.db.getCollection('unit_check').find({address: /\.7:/, _id: {$gt: start, $lt: end}})
 }
-
-router.get('/unit_check/:system_name/', login.validateUser, function(req, res) {
-	var session = req.session;
-	var system_name = req.params.system_name;
-	var utils = req.utils;
-
-	if (debug_chart) {
-		console.log("UNIT_CHECK: get : "+system_name);
-	}
-
-	var d = utils.get_master_template_data(req);
-	d.load_javascript.push( "/js/Chart.min.js" );
-	d.load_javascript.push( "/js/unit_check.c.js" );
-	d.system_name = system_name;
-	res.render("unit_check", d );
-});
 
 
 function init_session( req )
@@ -97,5 +83,5 @@ function init_widget_data( req, instr, widget )
 
 module.exports = {
 	router: router,
-	name: "monitors",
+	name: "charts",
 };
