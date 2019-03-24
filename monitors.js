@@ -33,9 +33,10 @@ var dosing_settings = {
 var server_task_settings = {
 	init_data:					initServerTaskData,
 	exec_task:					serverTask,
-	active_interval_sec:		1,
+	active_interval_sec:		10,
 	watching_interval_sec:		10,
 	post_timeout_interval_sec:	10,
+	fuse_ms:					5 * 1000,
 	debug:						2,
 	daytime_only:				false
 };
@@ -231,8 +232,8 @@ function create_monitor_types()
 		name: "fuge_light",
 		label: "Fuge Light",
 		target_instr_type: "power",
-		start_task: relayOn,
-		end_task: relayOff,
+		start_task: relayOnStart,
+		end_task: relayOffEnd,
 	};
 
 	Object.assign( monitors.fuge_light, server_task_settings );
@@ -245,11 +246,26 @@ function create_monitor_types()
 		name: "gyre_cycle",
 		label: "Power Cyc;e Gyre",
 		target_instr_type: "power",
-		start_task: relayOff,
-		end_task: relayOn,
+		start_task: relayOffStart,
+		end_task: relayOnEnd,
 	};
 
 	Object.assign( monitors.gyre_cycle, server_task_settings );
+
+	//
+	// Data logger
+	//
+	monitors.data_logger = {
+		name: "data_logger",
+		label: "Data Logger",
+		stand_instr_type: "probes",
+		target_instr_type: "dosing",
+		start_task: logDataStart,
+		end_task: logDataEnd
+	};
+
+	Object.assign( monitors.data_logger, server_task_settings, {watching_interval_sec: 10}  );
+
 
 	//
 	// Unit check
@@ -696,8 +712,13 @@ function dosingTask( data ) {
 // This will be re-read every time we take up so its OK to go down and back up again.
 function writeServerTaskData( data ) {
 	var monitors = data.utils.db.get('monitors');
+
+	var val = {	times: data.times };
+	if (data.interval && data.last_time) {
+		val.last_time = data.last_time;
+	}
 	monitors.update( {system: data.system_name, name: data.name} , 
-					 {$set: {	times: data.times }},
+					 {$set: val},
 					 function( err ) {
 						if (err) {
 							console.log("MON: ERROR: Failed writing status for \'"+data.name+"\' during iter.");
@@ -710,17 +731,50 @@ function writeServerTaskData( data ) {
 // at the specified interval.
 function initRepeatTimes(data) {
 
+	var utils = data.utils;
 	var d = new Date();
 	var hour = d.getHours(); // Midnight is 0.
 	var min = d.getMinutes();
+	var now = [hour,min];
+
+	// Do nothing if active.
+	if (data.is_active) {
+		return false;
+	}
+
+	// If there is an interval, and a last_time, create a single time that is interval past the last,
+	// with no duration.
+	if (data.interval && data.last_time) {
+		var next_start = utils.add_time( data.last_time, data.interval );
+		if (next_start[0] > 23) {
+			next_start[0] = 0;
+		}
+		if (utils.compare_times( now, next_start) > 0) {
+			next_start = now;
+		}
+		if ((data.times.length == 1) && (utils.compare_times( next_start, data.times[0].start ) === 0)) {
+			// Already setup.
+			return false;
+		} else {
+			// Set the next.
+			var time = {
+				start: next_start,
+				duration: [0,1],
+				done_today: false,
+				option: 0
+			};
+			data.times = [time];
+			return true;
+		}
+	}
+
 	var irepeat = undefined;
 	var irepeat_done = undefined;
-	var now = [hour,min];
 	// Find the first time with a repeat, and the last time after whose start time has already occurreed.
 	for ( var itime=0; itime < data.times.length; itime++ ) {
 		var time = data.times[itime];
 		if (irepeat != undefined) {
-			if ( (data.utils.compare_times( now, time.start ) > 0) && time.done_today) {
+			if ( (utils.compare_times( now, time.start ) > 0) && time.done_today) {
 				irepeat_done = itime;
 			}
 		} else if (time.repeat && ((time.repeat[0] > 0.0) || (time.repeat[1] > 0.0))) {
@@ -756,13 +810,13 @@ function initRepeatTimes(data) {
 	// Increment must be at least as long as the duration.
 	var incr = to_repeat.repeat;
 	var dur = to_repeat.duration;
-	if ( data.utils.compare_times( incr, dur ) <= 0 ) {
-		incr = data.utils.add_time( dur, [0,1] );
+	if ( utils.compare_times( incr, dur ) <= 0 ) {
+		incr = utils.add_time( dur, [0,1] );
 	}
 	// Add repeats until the end of the day.
 	var cur = data.times[i_keep].start;
 	while (1) {
-		cur = data.utils.add_time( cur, incr );
+		cur = utils.add_time( cur, incr );
 		if (cur[0] >= 24.0) {
 			break;
 		}
@@ -865,11 +919,13 @@ function serverTask( data ) {
 							data.active_task = undefined;
 							data.is_active = false;
 							time.done_today = true;
+							data.last_time = now;
 							writeServerTaskData(data);
 							scheduleIter(data,false);
 						}, 
 						function (error) {
 							// Error ending.
+							data.last_time = now;
 							writeServerTaskData(data);
 							scheduleIter(data,true);
 							if (!data.is_active) {
@@ -1204,7 +1260,7 @@ function endScheduledShutdown( data, option, successFunc, errorFunc ) {
 
 // Function to turn a relay on
 // Options: switch num.
-function relayOn( data, option, duration_min, successFunc, errorFunc ) {
+function relayOnEnd( data, option, successFunc, errorFunc ) {
 	var utils = data.utils;
 	var instrs = data.instrs;
 	var power = utils.get_instr_by_type( instrs, data.target_instr_type );
@@ -1217,10 +1273,15 @@ function relayOn( data, option, duration_min, successFunc, errorFunc ) {
 		},
 		errorFunc );
 }
+// Function to turn a relay on
+// Options: switch num.
+function relayOnStart( data, option, duration_min, successFunc, errorFunc ) {
+	relayOnEnd( data, option, successFunc, errorFunc );
+}
 
 // Function to turn a relay off
 // Option: swich num.
-function relayOff( data, option, successFunc, errorFunc ) {
+function relayOffEnd( data, option, successFunc, errorFunc ) {
 	var utils = data.utils;
 	var instrs = data.instrs;
 	var power = utils.get_instr_by_type( instrs, data.target_instr_type );
@@ -1232,6 +1293,68 @@ function relayOff( data, option, successFunc, errorFunc ) {
 			successFunc();
 		},
 		errorFunc );
+}
+
+// Function to turn a relay off
+// Option: swich num.
+function relayOffStart( data, option, duration_min, successFunc, errorFunc ) {
+	relayOffEnd( data, option, successFunc, errorFunc );
+}
+
+
+// Start function for data logger
+function logDataStart( data, option, duration, successFunc, errorFunc ) {
+	var utils = data.utils;
+	var instrs = data.instrs;
+
+	var stand = utils.get_instr_by_type( instrs, data.stand_instr_type );
+	var dosing = utils.get_instr_by_type( instrs, data.target_instr_type );
+	if ((stand == undefined) || (dosing == undefined)) {
+		console.log("ERROR: Cant find instruments ("+data.stand_instr_type+","+data.target_instr_type+")");
+		return;
+	}
+
+	// Get stand status.
+	utils.queue_and_send_instr_cmd( stand, "stat", data.fuse_ms,
+		function(stand_status) { // Success
+
+			// Get dosing status
+			utils.queue_and_send_instr_cmd( dosing, "stat", data.fuse_ms,
+				function(dosing_status) { // Success
+
+					// Assemble a record and record it in the log_data collection.
+					var temp = 0.0;
+					if ((stand_status.temp0 > 0.0) && (stand_status.temp1 > 0.0)) {
+						temp = (stand_status.temp0 + stand_status.temp1)/2.0;
+					} else if (stand_status.temp0 > 0.0) {
+						temp = stand_status.temp0;
+					} else if (stand_status.temp1 > 0.0) {
+						temp = stand_status.temp1;
+					}
+					var rec = {
+						system: data.system_name,
+						pH : stand_status.pH,
+						salinity: stand_status.SAL,
+						temp: temp,
+						salt_res: dosing_status.dist
+					};
+
+					var log_data = data.utils.db.get("log_data");
+					log_data.insert( rec, {w: 0} );
+
+					data.times[0].duration = [0,0];
+					successFunc();
+				},
+				errorFunc );
+		},
+		errorFunc );
+
+}
+
+// End function for data logger
+// Nothing to do.
+function logDataEnd( data, option, successFunc, errorFunc ) {
+	successFunc();
 }
 
 
