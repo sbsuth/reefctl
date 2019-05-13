@@ -107,7 +107,7 @@ function encode_value( val, type ) {
 			break;
 		case 'tod':
 			// Value is [hour,min], format is hour:min
-			str = val[0]+":"+val[1];
+			str = dig2(val[0])+":"+dig2(val[1]);
 			break;
 		case 'hms':  
 			// Value is sec, format is hour:min[:sec].
