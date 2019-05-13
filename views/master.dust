@@ -33,7 +33,7 @@
         <div id="navbar" class="collapse navbar-collapse">
           <ul class="nav navbar-nav">
             <li class="active"><a href="/dashboard">Dashboard</a></li>
-            <li class="active"><a href="/logging">Logging</a></li>
+            <li class="active"><a href="/charts/{session.system_name}">Charts</a></li>
             <li class="dropdown">
               <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">Shutdown <span class="caret"></span></a>
               <ul class="dropdown-menu">

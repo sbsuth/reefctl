@@ -129,7 +129,10 @@ function PageUtils ( useDebug, usePrefix, useInterval, slowInterval, idleInterva
 			interval = page.slow_interval;
 		}
 		if (interval > 0) {
-			setTimeout( function() { page.updateStatus() }, interval );
+			if (page.activeTimeout) {
+				clearTimeout(page.activeTimeout);
+			}
+			page.activeTimeout = setTimeout( function() { page.activeTimeout = undefined; page.updateStatus() }, interval );
 		} else {
 			page.disableStatusUpdates();
 		}
@@ -395,3 +398,13 @@ function decodeDayTime( spec ) {
 	return (hour * 3600) + (min * 60) + sec;
 		
 }
+
+function mongoIdToTime( id ) 
+{
+	var tstr = "0x" + id.substring( 0, id.length-16 );
+	var tms = parseInt(tstr) * 1000;
+	var t = new Date;
+	t.setTime(tms);
+	return t;
+}
+

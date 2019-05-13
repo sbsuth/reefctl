@@ -746,10 +746,15 @@ function initRepeatTimes(data) {
 	// with no duration.
 	if (data.interval && data.last_time) {
 		var next_start = utils.add_time( data.last_time, data.interval );
+		var near_start = utils.add_time( now, data.interval );
+		if ( utils.compare_times( next_start, near_start ) > 0) {
+			// Avoid problem with old next_starts for conditions like disable/re-enable by moving forwward.
+			data.last_time = now;
+			next_start = near_start;
+		}
 		if (next_start[0] > 23) {
 			next_start[0] = 0;
-		}
-		if (utils.compare_times( now, next_start) > 0) {
+		} else if (utils.compare_times( now, next_start) > 0) {
 			next_start = now;
 		}
 		if ((data.times.length == 1) && (utils.compare_times( next_start, data.times[0].start ) === 0)) {
@@ -941,8 +946,15 @@ function serverTask( data ) {
 				// Nothing is active. Check if this time should start.
 				// Until a successful start, we don't set is_active, so 
 				// we'll come back here to retry until those are exhausted.
+				// Interval-based tasks can start anytime after their start times,
+				// but other tasks must be between start and end times.
+				var considerEnd = true;
+				if (data.interval && (utils.compare_times( now, data.interval) > 0)) {
+					// Because of the rollover at EOD, we require the time of day to be larger than the interval.
+					considerEnd = false;
+				}
 				if (   (utils.compare_times( now, start ) >= 0)
-				    && (utils.compare_times( now, end ) < 0)) {
+				    && ((utils.compare_times( now, end ) < 0) || !considerEnd)) {
 					data.start_task( data, option, duration,
 						function() {
 							// Successfully started.  Copy into active_task.

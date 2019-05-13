@@ -5,18 +5,46 @@ var login = require('./login')
 var debug_chart = 1;
 
 /*
- * GET chart data.
+ * GET charts.
  */
-router.get('/chart/:system_name/', login.validateUser, function(req, res) {
+router.get('/charts/:system_name/', login.validateUser, function(req, res) {
 	var session = req.session;
-	var system_name = req.params.system_name;
 	var utils = req.utils;
+	var d = utils.get_master_template_data(req);
+	d.load_javascript.push( "/js/moment.js" );
+	d.load_javascript.push( "/js/Chart.min.js" );
+	d.load_javascript.push( "/js/charts.c.js" );
 
-	if (debug_chart) {
-		console.log("CHARTS: get : "+system_name);
-	}
+	d.system_name = session.system_name;
 
-	utils.send_error( res, "No char page yet!");
+	d.charts = [
+		{	label:	"pH",
+			field:  "pH",
+			collection: "log_data",
+			type:	"real",
+			mav_len: 150
+		},
+		{	label:	"Temperature",
+			field:  "temp",
+			collection: "log_data",
+			type:	"real",
+			mav_len: 30
+		},
+		{	label:	"Salinity",
+			field:  "salinity",
+			collection: "log_data",
+			type:	"real",
+			mav_len: 0
+		},
+		{	label:	"Salt Reservoir Level",
+			field:  "salt_res",
+			collection: "log_data",
+			type:	"int",
+			mav_len: 40
+		},
+	];
+
+	res.render("charts_main", d );
 });
 
 //
@@ -34,22 +62,16 @@ router.get('/chart_data/:system_name/:start/:end', function(req, res) {
 try {
 	var startDate = new Date( parseInt(start) );
 	var endDate = new Date( parseInt(end) );
-
-//startDate = new Date( 2019, 2, 22, 22, 0, 0, 0 );
-//endDate = new Date( 2019, 2, 22, 23, 59, 59, 0 );
 	var startId = utils.mongo_id_for_time(startDate);
 	var endId = utils.mongo_id_for_time(endDate);
-
 	var log_data = utils.db.get("log_data");
 	log_data.find( {system: system_name,
 					_id: {$gt: startId, $lt: endId}
 				    }, {}, function( err, data_objs ) {
 		if (data_objs && data_objs.length && !err) {
 			var rslt = {data: data_objs};
-console.log("HEY: Got "+data_objs.length+" data");
 			res.send( rslt );
 		} else {
-console.log("HEY: Got no data");
 			var rslt = {data: data_objs};
 			res.send( rslt );
 		}
