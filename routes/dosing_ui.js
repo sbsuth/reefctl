@@ -141,7 +141,7 @@ router.get('/dosers/:system_name/', login.validateUser, function(req, res) {
 			]
 		},
 		vodka_dosing: {
-			order: 1,
+			order: 4,
 			view_settings: [
 				{	label: "Start Time",
 					field: "start_time",
@@ -176,6 +176,84 @@ router.get('/dosers/:system_name/', login.validateUser, function(req, res) {
 				{	label: "Dosed Today",
 					field: "dosed",
 					type:  "int10"
+				},
+			]
+		},
+		alk_dosing: {
+			order: 2,
+			view_settings: [
+				{	label: "Start Time",
+					field: "start_time",
+					type:  "tod"
+				},
+				{	label: "ml Per Day",
+					field: "ml_per_day",
+					type:  "int"
+				},
+				{	label: "ml Per Iter",
+					field: "ml_per_iter",
+					type:  "int"
+				},
+				{	label: "Iteration gap",
+					field: "inter_interval_sec",
+					type:  "hms"
+				},
+				{	label: "Pump Num",
+					field: "pump_num",
+					type:  "int"
+				},
+				{	label: "Debug",
+					field: "debug",
+					type:  "bool"
+				},
+			],
+			view_status: [
+				{	label: "Active",
+					field: "is_active",
+					type:  "bool"
+				},
+				{	label: "Dosed Today",
+					field: "dosed",
+					type:  "int"
+				},
+			]
+		},
+		ca_dosing: {
+			order: 3,
+			view_settings: [
+				{	label: "Start Time",
+					field: "start_time",
+					type:  "tod"
+				},
+				{	label: "ml Per Day",
+					field: "ml_per_day",
+					type:  "int"
+				},
+				{	label: "ml Per Iter",
+					field: "ml_per_iter",
+					type:  "int"
+				},
+				{	label: "Iteration gap",
+					field: "inter_interval_sec",
+					type:  "hms"
+				},
+				{	label: "Pump Num",
+					field: "pump_num",
+					type:  "int"
+				},
+				{	label: "Debug",
+					field: "debug",
+					type:  "bool"
+				},
+			],
+			view_status: [
+				{	label: "Active",
+					field: "is_active",
+					type:  "bool"
+				},
+				{	label: "Dosed Today",
+					field: "dosed",
+					type:  "int"
 				},
 			]
 		}

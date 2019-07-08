@@ -210,6 +210,50 @@ function create_monitor_types()
 	Object.assign( monitors.tsp_dosing, dosing_settings );
 
 	//
+	// ALK DOSING
+	//
+	monitors.alk_dosing = { 
+		name: "alk_dosing",
+		label: "Alk Dosing",
+		stand_instr_type: "sump_level",
+		target_instr_type: "dosing",
+		num_phases: 1,
+		pump_num: 1,
+		phase: 0,
+		stand_ok_for_dosing: function(data,status) {
+			// Always OK for now.
+			return true;
+		},
+		dosing_ok: function(data,status) {
+			// Always OK for now.
+			return true;
+		},
+	};
+	Object.assign( monitors.alk_dosing, dosing_settings );
+
+	//
+	// CA DOSING
+	//
+	monitors.ca_dosing = { 
+		name: "ca_dosing",
+		label: "Calc Dosing",
+		stand_instr_type: "sump_level",
+		target_instr_type: "dosing",
+		num_phases: 1,
+		pump_num: 2,
+		phase: 0,
+		stand_ok_for_dosing: function(data,status) {
+			// Always OK for now.
+			return true;
+		},
+		dosing_ok: function(data,status) {
+			// Always OK for now.
+			return true;
+		},
+	};
+	Object.assign( monitors.ca_dosing, dosing_settings );
+
+	//
 	// Scheduled shutdown
 	//
 	monitors.scheduled_shutdown = {

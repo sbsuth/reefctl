@@ -270,13 +270,13 @@ router.get('/fixture_main/:instr_name', login.validateUser, function(req, res) {
 				  },
 				  {
 					index: 5,
-					id: 0,
+					id: 1,
 					name: "amber",
 					label: "Amber"
 				  },
 				  {
 					index: 6,
-					id: 1,
+					id: 0,
 					name: "red",
 					label: "Red"
 				  },

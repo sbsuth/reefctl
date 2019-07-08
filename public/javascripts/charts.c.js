@@ -100,15 +100,18 @@ charts.handleStatus = function ( data, first_times, only_field ) {
 	for ( var i=0; i < data.data.length; i++ ) {
 		var d = data.data[i];
 		var t = mongoIdToTime(d._id);
+
+		// Filter the wierd tight bunch I get around midnight until I can fix the logging.
 		if (last_t && ((t.getTime() - last_t.getTime()) < 1000*60*3)) {
 			continue;
 		}
+
 		last_t = t;
 		for ( var ichart=0; ichart < ncharts; ichart++ ) {
 			var field = charts.charts[ichart].field;
 			if ((t.getTime() > first_times[ichart]) && (!only_field || (field == only_field))) {
 				var val = Number(d[field]);
-				if (val != undefined) {
+				if ((val != undefined) && (val > 0)) { // ANything <=0 is an anomalie.
 					data_sets[ichart].val.push( {t: t, y: val} );
 
 					var mav_len = charts.charts[ichart].mav_len;
