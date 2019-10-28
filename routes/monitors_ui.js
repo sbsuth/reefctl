@@ -233,6 +233,14 @@ router.get('/monitors/:system_name/', login.validateUser, function(req, res) {
 					field: "auto_power_cycle",
 					type:  "bool"
 				},
+				{	label: "Disabled Addrs",
+					field: "disabled_addrs",
+					type:  "int_arr"
+				},
+				{	label: "Silent Addrs",
+					field: "no_text_addrs",
+					type:  "int_arr"
+				},
 				{	label: "Debug",
 					field: "debug",
 					type:  "bool"

@@ -90,6 +90,15 @@ function encode_value( val, type ) {
 		case "int":
 			str = val;
 			break;
+		case "int_arr":
+			str = "";
+			for ( var i=0; i < val.length; i++ ) {
+				if (i > 0) {
+					str += ",";
+				}
+				str += val[i];
+			}
+			break;
 		case 'real':
 			str = val.toFixed(1);
 			break;
@@ -144,6 +153,18 @@ function decode_value( str, type ) {
 			value = Number.parseInt(str);
 			if (Number.isNaN(value)) {
 				err = "Must specify an integer.";
+			}
+			break;
+		case "int_arr":
+			var values = str.split(',');
+			value = [];
+			for (var i=0; i < values.length; i++ ) {
+				var ival = Number.parseInt(values[i]);
+				if (Number.isNaN(value)) {
+					err = "Must specify an integer.";
+				} else {
+					value.push(ival);
+				}
 			}
 			break;
 		case 'real':
@@ -286,6 +307,9 @@ monitors.sendSetting = function (event,monitor,setting,value,type,successFunc) {
 
 	var page=this;
     event.preventDefault();
+	if (value == "") {
+		value = "none";
+	}
 	page.debugMsg("sendSetting: "+setting+"="+value);
 	$.ajax({
 		type: 'POST',

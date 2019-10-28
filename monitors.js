@@ -1089,8 +1089,10 @@ function checkIfPowerCycleNeeded( data, unit, success )
 				};
 				unit_check.insert( rec, {w: 0} );
 
-				// Send a text
-				data.utils.send_text_msg( "Unit restart", "Unit: "+unit.address+", time: "+new Date().toLocaleTimeString());
+				// Send a text unless we've specified we don't want to hear about failures on this address.
+				if (!data.utils.unit_addr_in_set(unit,data.no_text_addrs)) {
+					data.utils.send_text_msg( "Unit restart", "Unit: "+unit.address+", time: "+new Date().toLocaleTimeString());
+				}
 
 				unit.num_good = 0;
 				unit.num_bad = 0;
@@ -1225,18 +1227,25 @@ function unitCheck( data ) {
 
 		var iunit = data.next_unit;
 		var unit = data.units[iunit];
-		if (unit != undefined) {
-			data.next_unit = (data.next_unit + 1) % data.units.length;
-			handled = true;
-			var instr = utils.get_instr_by_type( instrs, unit.module_name );
-			utils.queue_and_send_instr_cmd( instr, unit.cmd, data.fuse_ms,
-				function(status) { // Success
-					handleUnitCheckResult( data, unit, true, status );
-				},
-				function(error) { // Error
-					handleUnitCheckResult( data, unit, false, error );
+		if (unit != undefined) { 
+			if (!utils.unit_addr_in_set(unit,data.disabled_addrs)) {
+				data.next_unit = (data.next_unit + 1) % data.units.length;
+				handled = true;
+				var instr = utils.get_instr_by_type( instrs, unit.module_name );
+				utils.queue_and_send_instr_cmd( instr, unit.cmd, data.fuse_ms,
+					function(status) { // Success
+						handleUnitCheckResult( data, unit, true, status );
+					},
+					function(error) { // Error
+						handleUnitCheckResult( data, unit, false, error );
+					}
+				);
+			} else {
+				data.next_unit = (data.next_unit + 1) % data.units.length;
+				if  (data.debug) {
+					console.log("UNIT CHECK: "+ new Date().toLocaleTimeString() + ": Skipping check of "+unit.address+", because it is disabled");
 				}
-			);
+			}
 		}
 
 		if (!handled) {

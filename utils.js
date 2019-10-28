@@ -1135,6 +1135,20 @@ function decode_value( str, type ) {
 				err = "Must specify an integer.";
 			}
 			break;
+		case "int_arr":
+			value = [];
+			if (str != "none") {
+				var values = str.split(',');
+				for (var i=0; i < values.length; i++ ) {
+					var ival = Number.parseInt(values[i]);
+					if (Number.isNaN(value)) {
+						err = "Must specify an integer.";
+					} else {
+						value.push(ival);
+					}
+				}
+			}
+			break;
 		case 'real':
 			value = Number.parseFloat(str);
 			if (Number.isNaN(value)) {
@@ -1209,6 +1223,22 @@ function mongo_id_for_time( t ) {
 	return objt;
 }
 
+// Returns true if the given unit's address's last digit is in the given set of ints.
+function unit_addr_in_set( unit, addrs ) {
+	if ( !addrs || !unit || (addrs.length == 0)) {
+		return false;
+	}
+	var nums = unit.address.split('.');
+	if (nums.length < 4) {
+		return false;
+	}
+	var last_num = Number.parseInt(nums[3]);
+	if (last_num <= 0) {
+		return false;
+	}
+	return (addrs.indexOf(last_num) >= 0);
+}
+
 module.exports = {
 	init_dust_helpers: function( dust_in ) {
 		dust = dust_in;
@@ -1232,7 +1262,7 @@ module.exports = {
 	send_instr_cmd: send_instr_cmd,
 	send_instr_cmd_lines: send_instr_cmd_lines,
 	instr_cmd_done: instr_cmd_done,
-	default_instruments: default_instruments,
+	//default_instruments: default_instruments,
 	is_daytime: is_daytime,
 	register_monitor: register_monitor,
 	get_monitor: get_monitor,
@@ -1248,5 +1278,6 @@ module.exports = {
 	reset_power_cycle: reset_power_cycle,
 	send_text_msg: send_text_msg,
 	decode_value: decode_value,
-	mongo_id_for_time: mongo_id_for_time
+	mongo_id_for_time: mongo_id_for_time,
+	unit_addr_in_set: unit_addr_in_set
 }
