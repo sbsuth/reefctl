@@ -596,7 +596,10 @@ $(document).ready(function() {
 	// Read hidden inputs.
 	var instr_name = $( '#instr_name' )[0].value;
 	page.instr_name = instr_name;
-	page.channels = JSON.parse( $('#channels').val() );
+	var chan_data = $('#channels').val();
+	if (chan_data != "/") {
+		page.channels = JSON.parse( chan_data );
+	}
 
     // Fixture button events
     $('#btnUp').on('click', function (event) {fixture.sendCmd(event,"up")});

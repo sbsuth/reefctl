@@ -26,7 +26,7 @@ var dosing_settings = {
 	inter_interval_sec:			0,
 	num_retries:				5,
 	debug:						2,
-	daytime_only:				true
+	daytime_only:				false
 };
 
 // Shared settings for all server task monitors
@@ -457,7 +457,7 @@ function initUnitCheckData() {
 			continue;
 		}
 		var mod_check = {
-			module_name: mod.name,
+			instr_name: instr.name,
 			address: instr.address,
 			cmd: instr.status_cmd,
 			shutdown_switch: instr.shutdown_switch,
@@ -1081,7 +1081,7 @@ function checkIfPowerCycleNeeded( data, unit, success )
 				var unit_check = data.utils.db.get("unit_check");
 				var rec = {
 					kind: "power_cycle",
-					module_name: unit.module_name,
+					instr_name: unit.instr_name,
 					address: unit.address,
 					cmd: unit.cmd,
 					time_down_sec: timeDown/1000,
@@ -1170,7 +1170,7 @@ function handleUnitCheckResult( data, unit, success, value )
 			var unit_check = data.utils.db.get("unit_check");
 			var rec = {
 				kind: "unit_status",
-				module_name: unit.module_name,
+				instr_name: unit.instr_name,
 				address: unit.address,
 				cmd: unit.cmd,
 				num_good: unit.num_good,
@@ -1228,10 +1228,10 @@ function unitCheck( data ) {
 		var iunit = data.next_unit;
 		var unit = data.units[iunit];
 		if (unit != undefined) { 
+			data.next_unit = (data.next_unit + 1) % data.units.length;
 			if (!utils.unit_addr_in_set(unit,data.disabled_addrs)) {
-				data.next_unit = (data.next_unit + 1) % data.units.length;
 				handled = true;
-				var instr = utils.get_instr_by_type( instrs, unit.module_name );
+				var instr = utils.get_instr_by_name( instrs, unit.instr_name );
 				utils.queue_and_send_instr_cmd( instr, unit.cmd, data.fuse_ms,
 					function(status) { // Success
 						handleUnitCheckResult( data, unit, true, status );
@@ -1241,7 +1241,6 @@ function unitCheck( data ) {
 					}
 				);
 			} else {
-				data.next_unit = (data.next_unit + 1) % data.units.length;
 				if  (data.debug) {
 					console.log("UNIT CHECK: "+ new Date().toLocaleTimeString() + ": Skipping check of "+unit.address+", because it is disabled");
 				}

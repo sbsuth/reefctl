@@ -237,56 +237,66 @@ router.get('/fixture_main/:instr_name', login.validateUser, function(req, res) {
 	var d = utils.get_master_template_data(req);
 	d.load_javascript.push( "/js/fixture.c.js" );
 	d.instr_name = instr_name;
-	d.channels = [
-				  {
-					index: 0,
-					id: 6,
-					name: "white",
-					label: "White"
-				  },
-				  {
-					index: 1,
-					id: 5,
-					name: "violet",
-					label: "Violet"
-				  },
-				  {
-					index: 2,
-					id: 4,
-					name: "royal",
-					label: "Royal"
-				  },
-				  {
-					index: 3,
-					id: 3,
-					name: "blue",
-					label: "Blue"
-				  },
-				  {
-					index: 4,
-					id: 7,
-					name: "cyan",
-					label: "Cyan"
-				  },
-				  {
-					index: 5,
-					id: 1,
-					name: "amber",
-					label: "Amber"
-				  },
-				  {
-					index: 6,
-					id: 0,
-					name: "red",
-					label: "Red"
-				  },
-				  {
-					index: 7,
-					id: 11,
-					name: "strip",
-					label: "Strip"
-				  }
-				 ];
+	if (instr_name.indexOf("hybrid") >= 0) {
+		d.hybrid = true;
+	} else {
+		d.hybrid = false;
+	}
+	if (!d.hybrid) {
+		d.channels = [
+					  {
+						index: 0,
+						id: 6,
+						name: "white",
+						label: "White"
+					  },
+					  {
+						index: 1,
+						id: 5,
+						name: "violet",
+						label: "Violet"
+					  },
+					  {
+						index: 2,
+						id: 4,
+						name: "royal",
+						label: "Royal"
+					  },
+					  {
+						index: 3,
+						id: 3,
+						name: "blue",
+						label: "Blue"
+					  },
+					  {
+						index: 4,
+						id: 7,
+						name: "cyan",
+						label: "Cyan"
+					  },
+					  {
+						index: 5,
+						id: 1,
+						name: "amber",
+						label: "Amber"
+					  },
+					  {
+						index: 6,
+						id: 0,
+						name: "red",
+						label: "Red"
+					  },
+					  {
+						index: 7,
+						id: 11,
+						name: "strip",
+						label: "Strip"
+					  }
+					 ];
+	} else {
+		// No colors for the hybrid fixture.
+		d.channels = [];
+	}
 	res.render("fixture_main", d );
 });
 

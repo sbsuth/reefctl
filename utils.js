@@ -131,10 +131,12 @@ function save_instr_info()
 {
 }
 
+if (0) {
 // The default set of instruments in the system.
 // This info would be stored in a database, and read based on 
 // user login, and system selection, but while I've got only
 // one, this is fine.
+// UNREFERENCED!
 var default_instruments = [
 	{ name: 'main_fixture',
 	  type: 'fixture',
@@ -182,6 +184,7 @@ var default_instruments = [
 	  address: "10.10.2.8:1000"
 	},
 ];
+}
 
 // Step 2 in session setup: get instruments for user's system.
 // Users have an array of systems, and we read the instruments from the DB
