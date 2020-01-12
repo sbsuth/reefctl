@@ -936,7 +936,7 @@ function start_query_server()
 	server.listen(3001, '10.10.2.2');
 }
 
-var base_zwave_url = 'http://127.0.0.1:8123/api/';
+var base_zwave_url = 'http://reefctl2:8123/api/';
 
 function send_zwave_cmd( entity, cmd, successFunc, errorFunc ) {
 	var url = base_zwave_url + cmd;
