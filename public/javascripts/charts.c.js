@@ -109,9 +109,12 @@ charts.handleStatus = function ( data, first_times, only_field ) {
 		last_t = t;
 		for ( var ichart=0; ichart < ncharts; ichart++ ) {
 			var field = charts.charts[ichart].field;
+			var min_val = charts.charts[ichart].min_val;
+			var filter_vals = charts.charts[ichart].filter_vals;
 			if ((t.getTime() > first_times[ichart]) && (!only_field || (field == only_field))) {
 				var val = Number(d[field]);
-				if ((val != undefined) && (val > 0)) { // ANything <=0 is an anomalie.
+				if (   (val != undefined) && (val > min_val) 
+					&& ((filter_vals == undefined) || (filter_vals.indexOf(val) < 0))) { 
 					data_sets[ichart].val.push( {t: t, y: val} );
 
 					var mav_len = charts.charts[ichart].mav_len;
@@ -131,6 +134,10 @@ charts.handleStatus = function ( data, first_times, only_field ) {
 			continue;
 		}
 		var canvas = charts.charts[ichart].canvas;
+		if (charts.charts[ichart].chart) {
+			// If you don't destroy any old chart, its still there, and can flash back into view.
+			charts.charts[ichart].chart.destroy();
+		}
 		var chart = new Chart( canvas, {
 				type: 'line',
 				data: {
@@ -214,9 +221,13 @@ $(document).ready(function() {
 		var chart = chart_ctrls[i];
 		var field = strip_last_token(chart.id);
 	    var mav_len_ctrl = $('#'+field+'-mav_len');
+	    var filter_vals_ctrl = $('#'+field+'-filter_vals');
+	    var min_val_ctrl = $('#'+field+'-min_val');
 		charts.charts.push( {
 			field: field,
 			mav_len: mav_len_ctrl.val(),
+			min_val: min_val_ctrl.val(),
+			filter_vals: filter_vals_ctrl.val(),
 			range_ctrl : $('#'+field+'-range'),
 			canvas : $('#'+field+'-canvas')
 		});

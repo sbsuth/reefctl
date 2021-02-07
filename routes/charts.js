@@ -22,25 +22,33 @@ router.get('/charts/:system_name/', login.validateUser, function(req, res) {
 			field:  "pH",
 			collection: "log_data",
 			type:	"real",
-			mav_len: 150
+			mav_len: 150,
+			filter_vals: [8.0],
+			min_val: 7.4
 		},
 		{	label:	"Temperature",
 			field:  "temp",
 			collection: "log_data",
 			type:	"real",
-			mav_len: 30
+			mav_len: 30,
+			filter_vals: undefined,
+			min_val: 0.0
 		},
 		{	label:	"Salinity",
 			field:  "salinity",
 			collection: "log_data",
 			type:	"real",
-			mav_len: 0
+			mav_len: 40,
+			filter_vals: undefined,
+			min_val: 0.0
 		},
 		{	label:	"Salt Reservoir Level",
 			field:  "salt_res",
 			collection: "log_data",
 			type:	"int",
-			mav_len: 40
+			mav_len: 40,
+			filter_vals: undefined,
+			min_val: 0.0
 		},
 	];
 

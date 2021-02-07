@@ -17,6 +17,8 @@
 	  <div class="row">
 	    {#charts}
           <input type=hidden id={field}-mav_len value={mav_len} />
+          <input type=hidden id={field}-min_val value={min_val} />
+          <input type=hidden id={field}-filter_vals value={filter_vals} />
 	      <div id={field}-chart>
 			<!-- Current speed status bars -->
 			<div class="col-xs-12 col-md-6">

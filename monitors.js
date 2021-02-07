@@ -4,7 +4,7 @@ var topup_settings = {
 	init_data:					initTopupData,
 	exec_task:					topupTask,
 	active_interval_sec:		10,
-	watching_interval_sec:		5 * 60,
+	watching_interval_sec:		1 * 60,
 	post_timeout_interval_sec:	1 * 60,
 	fuse_ms:					5 * 1000,
 	num_retries:				5,
@@ -1178,8 +1178,11 @@ function handleUnitCheckResult( data, unit, success, value )
 			};
 			unit_check.insert( rec, {w: 0} );
 		}
-		unit.num_good = 0;
-		unit.num_bad = 0;
+		if ((unit.num_good > 0) || !data.auto_power_cycle) {
+			// Restart counts, unless we're still all bad and we're auto power cycling.
+			unit.num_good = 0;
+			unit.num_bad = 0;
+		}
 	}
 
 	scheduleIter(data,false); // Never retry.
